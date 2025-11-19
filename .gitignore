@@ -1,0 +1,51 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Application configurations
+application.yml
+application-*.yml
+application.properties
+application-*.properties
+
+# Database
+*.db
+*.h2.db
+*.mv.db
+
+# Logs
+logs/
+*.log.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### Maven ###
+pom.xml.versionsBackup
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.next
+release.properties
