@@ -44,10 +44,22 @@ public class RoomService {
                 .map(roomMapper::toResponse);
     }
 
+    public List<RoomResponse> findAll() {
+        return roomRepository.findAll().stream()
+                .map(roomMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
     public RoomResponse findActiveRoomById(Long id) {
         return roomRepository.findByIdAndIsActiveTrue(id)
                 .map(roomMapper::toResponse)
-                .orElseThrow(() -> new RoomNotFoundException("Room not found with id: " + id));
+                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + id));
+    }
+
+    public RoomResponse findById(Long id) {
+        return roomRepository.findById(id)
+                .map(roomMapper::toResponse)
+                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + id));
     }
 
     public List<RoomResponse> findActiveByCapacity(Integer minCapacity) {
@@ -68,7 +80,7 @@ public class RoomService {
 
     public RoomAvailabilityResponse checkAvailability(Long id, LocalDateTime startTime, LocalDateTime endTime) {
         roomRepository.findByIdAndIsActiveTrue(id)
-                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive"));
+                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + id));
 
         // Проверяем доступность на конкретный интервал
         boolean isAvailable = isRoomAvailable(id, startTime, endTime);
@@ -136,7 +148,7 @@ public class RoomService {
     public RoomResponse update(Long id, RoomCreateEditRequest request) {
 
         Room room = roomRepository.findById(id)
-                .orElseThrow(() -> new RoomNotFoundException("Room not found with id: " + id));
+                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + id));
 
         if (!room.getName().equals(request.getName()) &&
                 roomRepository.existsByNameAndIsActiveTrue(request.getName())) {
@@ -151,7 +163,7 @@ public class RoomService {
     @Transactional
     public void updateRoomStatus(Long roomId, boolean active) {
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new RoomNotFoundException("Room not found with id: " + roomId));
+                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + roomId));
 
         if (room.isActive() == active) {
             throw new RoomStatusConflictException(
@@ -159,24 +171,13 @@ public class RoomService {
             );
         }
 
-        roomRepository.updateRoomStatus(roomId, active);
-    }
-
-    @Transactional
-    public RoomResponse deactivateRoom(Long roomId) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new RoomNotFoundException("Room not found with id: " + roomId));
-
-        if (hasActiveBookings(roomId)) {
-            throw new RoomHasActiveBookingsException(
+        if (!active){
+            if (!hasActiveBookings(roomId)) roomRepository.updateRoomStatus(roomId, false);
+            else throw new RoomHasActiveBookingsException(
                     "Cannot delete room with active bookings. Cancel bookings first."
             );
         }
-
-        // Мягкое удаление - помечаем как неактивную
-        room.setActive(false);
-
-        return roomMapper.toResponse(roomRepository.save(room));
+        else roomRepository.updateRoomStatus(roomId, true);
     }
 
     private boolean hasActiveBookings(Long roomId) {
@@ -184,7 +185,7 @@ public class RoomService {
         List<Booking> activeBookings = bookingRepository.findConflictingBookings(
                 roomId,
                 LocalDateTime.now(),
-                LocalDateTime.MAX
+                LocalDateTime.now().plusYears(100)
         );
 
         return !activeBookings.isEmpty();

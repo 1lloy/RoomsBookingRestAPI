@@ -22,21 +22,10 @@ public class AuthenticationService {
 
         String username = authentication.getName();
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
     }
 
     public Long getCurrentUserId() {
         return getCurrentUser().getId();
-    }
-
-    public boolean isCurrentUserAdmin() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null &&
-                authentication.getAuthorities().stream()
-                        .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-    }
-
-    public boolean isCurrentUser(Long userId) {
-        return getCurrentUserId().equals(userId);
     }
 }

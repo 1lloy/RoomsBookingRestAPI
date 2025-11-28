@@ -67,7 +67,7 @@ public class AnalyticsController {
 
     //число бронирований для каждой комнаты за период
     @GetMapping("/popular-rooms")
-    public ResponseEntity<Map<RoomResponse, Long>> findPopularRooms(@RequestParam LocalDateTime start,
+    public ResponseEntity<Map<String, Long>> findPopularRooms(@RequestParam LocalDateTime start,
                                                                     @RequestParam LocalDateTime end,
                                                                     @RequestParam int limit){
 
@@ -76,7 +76,7 @@ public class AnalyticsController {
 
     //число бронирований для каждого пользователя за период
     @GetMapping("/users-bookings-count")
-    public ResponseEntity<Map<UserResponse, Long>> findUsersBookingsCount(@RequestParam LocalDateTime start,
+    public ResponseEntity<Map<String, Long>> findUsersBookingsCount(@RequestParam LocalDateTime start,
                                                                           @RequestParam LocalDateTime end){
 
         return ResponseEntity.ok(bookingService.findUsersBookingsCount(start, end));

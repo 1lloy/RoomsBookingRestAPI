@@ -63,6 +63,10 @@ public class UserService {
                 .map(userMapper::toResponse);
     }
 
+    public long countActiveUsers() {
+        return userRepository.countActiveUsers();
+    }
+
     @Transactional
     public UserResponse create(RegisterRequest registerRequest) {
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
@@ -74,6 +78,11 @@ public class UserService {
 
         return Optional.of(registerRequest)
                 .map(userMapper::toEntity)
+                .map(user -> {
+                    if (user.getRole() == null) user.setRole(UserRole.ROLE_USER);
+                    user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+                    return user;
+                })
                 .map(userRepository::save)
                 .map(userMapper::toResponse)
                 .orElseThrow(() -> new UserCreationException("Failed to create user"));
@@ -103,21 +112,14 @@ public class UserService {
 
     @Transactional
     public boolean updateStatus(Long userId, boolean active) {
-        return userRepository.findById(userId)
-                .map(user -> {
-                    if (user.isActive() != active) {
-                        userRepository.updateUserStatus(userId, active);
-                        return true;
-                    }
-                    else{
-                        throw new UsernameStatusConflictException("Username already has this status");
-                    }
-                })
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("Failed to retrieve user with id: " + userId));
-    }
 
-    public long countActiveUsers() {
-        return userRepository.countActiveUsers();
+        if (user.isActive() != active) {
+            userRepository.updateUserStatus(userId, active);
+            return true;
+        } else {
+            throw new UsernameStatusConflictException("Username already has this status");
+        }
     }
-
 }

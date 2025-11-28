@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    username: YOUR_TEST_USERNAME
+    password: YOUR_TEST_PASSWORD
+
+  jpa:
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: create-drop
+
+  liquibase:
+    enabled: false

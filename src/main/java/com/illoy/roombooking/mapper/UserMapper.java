@@ -17,6 +17,4 @@ public interface UserMapper {
 
     @Mapping(target = "isActive", constant = "true")
     User toEntity(RegisterRequest request);
-
-    void updateEntity(UserEditRequest request, @MappingTarget User user);
 }

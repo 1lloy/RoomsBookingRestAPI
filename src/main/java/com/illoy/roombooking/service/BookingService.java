@@ -3,6 +3,7 @@ package com.illoy.roombooking.service;
 import com.illoy.roombooking.database.entity.*;
 import com.illoy.roombooking.database.repository.BookingRepository;
 import com.illoy.roombooking.database.repository.RoomRepository;
+import com.illoy.roombooking.database.repository.UserRepository;
 import com.illoy.roombooking.dto.request.BookingCreateRequest;
 import com.illoy.roombooking.dto.response.BookingResponse;
 import com.illoy.roombooking.dto.response.RoomResponse;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
+    private final UserRepository userRepository;
+
     private final AuthenticationService authenticationService;
 
     private final UserMapper userMapper;
@@ -40,7 +44,7 @@ public class BookingService {
     @Transactional
     public BookingResponse create(BookingCreateRequest request) {
         Room room = roomRepository.findByIdAndIsActiveTrue(request.getRoomId())
-                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive"));
+                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + request.getRoomId()));
 
         User currentUser = authenticationService.getCurrentUser();
 
@@ -66,7 +70,7 @@ public class BookingService {
 
         User currentUser = authenticationService.getCurrentUser();
 
-        if (!booking.getUser().getId().equals(currentUser.getId()) &&
+        if (!booking.getUser().getUsername().equals(currentUser.getUsername()) &&
                 !currentUser.getRole().equals(UserRole.ROLE_ADMIN)) {
             throw new AccessDeniedException("You can only cancel your own bookings");
         }
@@ -107,7 +111,7 @@ public class BookingService {
     @Transactional
     public BookingResponse updateStatus(Long id, BookingStatus status){
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new BookingNotFoundException("Booking not found"));
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + id));
 
         if (booking.getStatus() == status) {
             throw new BookingStatusConflictException("Booking already has status: " + status);
@@ -131,9 +135,9 @@ public class BookingService {
 
         Booking booking = bookingRepository.findById(id).orElseThrow(() -> new BookingNotFoundException("Booking not found"));
 
-        if (!booking.getUser().getId().equals(currentUser.getId()) &&
+        if (!booking.getUser().getUsername().equals(currentUser.getUsername()) &&
                 !currentUser.getRole().equals(UserRole.ROLE_ADMIN)) {
-            throw new AccessDeniedException("You can only cancel your own bookings");
+            throw new AccessDeniedException("You can only check your own bookings");
         }
         else{
             return bookingMapper.toResponse(booking);
@@ -154,8 +158,8 @@ public class BookingService {
 
         // Если указаны даты - фильтруем по дате
         if (fromDate != null || toDate != null) {
-            LocalDateTime start = fromDate != null ? fromDate.atStartOfDay() : LocalDateTime.MIN;
-            LocalDateTime end = toDate != null ? toDate.atTime(LocalTime.MAX) : LocalDateTime.MAX;
+            LocalDateTime start = fromDate != null ? fromDate.atStartOfDay() : LocalDateTime.now().minusYears(100);
+            LocalDateTime end = toDate != null ? toDate.atTime(LocalTime.MAX) : LocalDateTime.now().plusYears(100);
 
             return bookingRepository.findByUserIdAndStartTimeBetween(currentUser.getId(), start, end, pageable)
                     .map(bookingMapper::toResponse);
@@ -178,86 +182,13 @@ public class BookingService {
 
         List<Object[]> queryResult = bookingRepository.getCountGroupByStatus(start, end);
 
-        queryResult.forEach(object -> resultMap.put((String) object[0], (Long) object[1]));
+        queryResult.forEach(object -> resultMap.put(String.valueOf(object[0]), (Long) object[1]));
 
         return resultMap;
     }
 
-    public List<BookingResponse> findByStatusAndStartTimeBetween(BookingStatus status,
-                                                                 LocalDateTime start,
-                                                                 LocalDateTime end){
-
-        return bookingRepository.findByStatusAndStartTimeBetween(status, start, end).stream()
-                .map(bookingMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    public Page<BookingResponse> findByStatusAndStartTimeBetween(BookingStatus status,
-                                                                 LocalDateTime start,
-                                                                 LocalDateTime end,
-                                                                 Pageable pageable){
-
-        return bookingRepository.findByStatusAndStartTimeBetween(status, start, end, pageable)
-                .map(bookingMapper::toResponse);
-    }
-
-    public List<BookingResponse> findByRoomIdAndStartTimeBetweenAndStatusIn(Long roomId,
-                                                                            LocalDateTime start,
-                                                                            LocalDateTime end,
-                                                                            List<BookingStatus> statuses){
-
-        return bookingRepository.findByRoomIdAndStartTimeBetweenAndStatusIn(roomId, start, end, statuses).stream()
-                .map(bookingMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<BookingResponse> findByStartTimeBetween(LocalDateTime start, LocalDateTime end){
-        return bookingRepository.findByStartTimeBetween(start, end).stream()
-                .map(bookingMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    public Page<BookingResponse> findByStartTimeBetween(LocalDateTime start, LocalDateTime end, Pageable pageable){
-        return bookingRepository.findByStartTimeBetween(start, end, pageable)
-                .map(bookingMapper::toResponse);
-    }
-
     public long countByStartTimeBetween(LocalDateTime start, LocalDateTime end){
         return bookingRepository.countByStartTimeBetween(start, end);
-    }
-
-    public long countByStatusAndStartTimeBetween(BookingStatus status, LocalDateTime start, LocalDateTime end){
-        return bookingRepository.countByStatusAndStartTimeBetween(status, start, end);
-    }
-
-    public long countByUserIdAndStatus(Long userId, BookingStatus status){
-        return bookingRepository.countByUserIdAndStatus(userId, status);
-    }
-
-    public List<BookingResponse> findUpcomingBookings() {
-        LocalDateTime now = LocalDateTime.now();
-        return bookingRepository.findUpcomingBookings(now).stream()
-                .map(bookingMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<BookingResponse> findExpiredBookings(){
-        LocalDateTime now = LocalDateTime.now();
-        return bookingRepository.findExpiredBookings(now).stream()
-                .map(bookingMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    public Map<String, Long> getBookingsCountByRoom(LocalDateTime start, LocalDateTime end) {
-        List<Map<String, Object>> results = bookingRepository.getBookingsCountByRoom(start, end);
-
-        return results.stream()
-                .collect(Collectors.toMap(
-                        result -> (String) result.get("roomName"),  // roomName
-                        result -> (Long) result.get("bookingCount"),    // bookingCount
-                        (existing, replacement) -> existing,
-                        LinkedHashMap::new
-                ));
     }
 
     public Map<String, Long> findBookingsCountByDow(LocalDateTime start, LocalDateTime end){
@@ -267,35 +198,30 @@ public class BookingService {
 
         List<Object[]> results = bookingRepository.findBookingsByDayOfWeek(start, end);
 
-        results.forEach(object -> dayStats.put(days[(int) object[0]] , (Long) object[1]));
+        results.forEach(object -> dayStats.put(days[((Number) object[0]).intValue()] , ((Number) object[1]).longValue()));
 
         return dayStats;
     }
 
-    public Double getAverageBookingDuration(LocalDateTime start, LocalDateTime end){
-        Double result = bookingRepository.getAverageBookingDuration(start, end);
-        return result != null ? Math.round(result * 100.0) / 100.0 : 0.0;
-    }
-
-    public Map<RoomResponse, Long> findPopularRooms(LocalDateTime start, LocalDateTime end, int limit) {
+    public Map<String, Long> findPopularRooms(LocalDateTime start, LocalDateTime end, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<Object[]> results = bookingRepository.findPopularRooms(start, end, pageable);
 
         return results.stream()
                 .collect(Collectors.toMap(
-                        result -> roomMapper.toResponse((Room) result[0]),
+                        result -> (String) result[0],
                         result -> (Long) result[1],
                         (existing, replacement) -> existing,
                         LinkedHashMap::new
                 ));
     }
 
-    public Map<UserResponse, Long> findUsersBookingsCount(LocalDateTime start, LocalDateTime end){
-        List<Object[]> results = bookingRepository.findActiveUsers(start, end);
+    public Map<String, Long> findUsersBookingsCount(LocalDateTime start, LocalDateTime end){
+        List<Object[]> results = bookingRepository.findUsersBookingsCount(start, end);
 
         return results.stream()
                 .collect(Collectors.toMap(
-                        result -> userMapper.toResponse((User) result[0]), //user entity
+                        result -> (String) result[0], //user name
                         result -> (Long) result[1], //booking count
                         (existing, replacement) -> existing,
                         LinkedHashMap::new
@@ -303,8 +229,12 @@ public class BookingService {
     }
 
     public Page<BookingResponse> findByUserId(Long userId, Pageable pageable) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new UsernameNotFoundException("User not found with id: " + userId);
+        }
+
         return bookingRepository.findByUserIdOrderByStartTimeDesc(userId, pageable)
                 .map(bookingMapper::toResponse);
     }
-
 }

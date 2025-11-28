@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -29,10 +28,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.role = 'ROLE_USER' AND u.isActive = true")
     Page<User> findAllActiveUsers(Pageable pageable);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE User u SET u.isActive = :active WHERE u.id = :userId")
     void updateUserStatus(@Param("userId") Long userId, @Param("active") boolean active);
 
-    @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'ROLE_USER'")
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'ROLE_USER' and u.isActive = true")
     long countActiveUsers();
 }

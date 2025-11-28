@@ -29,7 +29,7 @@ public class AdminBookingController {
                                              @RequestParam(defaultValue = "20") int size,
                                              @RequestParam(defaultValue = "startTime") String sortBy){
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
 
         if (status != null) {
             return ResponseEntity.ok(bookingService.findByStatus(status, pageable));

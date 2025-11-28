@@ -48,7 +48,7 @@ public class RoomController {
 
     //получить все комнаты по подстроке названия
     @GetMapping("/search")
-    public ResponseEntity<List<RoomResponse>> findActiveBySearchTerm(@RequestParam(defaultValue = "meeting") String searchTerm) {
+    public ResponseEntity<List<RoomResponse>> findActiveBySearchTerm(@RequestParam(defaultValue = "") String searchTerm) {
         return ResponseEntity.ok(roomService.searchActiveByName(searchTerm));
     }
 

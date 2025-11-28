@@ -87,11 +87,8 @@ public class AdminUserController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", isUpdated);
-        response.put("message", isUpdated ?
-                "User status updated successfully" :
-                "User status was already set to requested value");
         response.put("userId", userId);
-        response.put("active", request.isActive());
+        response.put("active", isUpdated ? request.isActive() : !request.isActive());
 
         return ResponseEntity.ok(response);
     }

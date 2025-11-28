@@ -12,6 +12,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/rooms")
 @RequiredArgsConstructor
@@ -19,6 +21,18 @@ import org.springframework.web.bind.annotation.*;
 public class AdminRoomController {
 
     private final RoomService roomService;
+
+    //получить все комнаты
+    @GetMapping
+    public ResponseEntity<List<RoomResponse>> findAll(){
+        return ResponseEntity.ok(roomService.findAll());
+    }
+
+    //получить отдельную любую комнату по id
+    @GetMapping("/{roomId}")
+    public ResponseEntity<RoomResponse> findById(@PathVariable("roomId") Long id){
+        return ResponseEntity.ok(roomService.findById(id));
+    }
 
     //создание комнаты
     @PostMapping
@@ -41,11 +55,5 @@ public class AdminRoomController {
 
         roomService.updateRoomStatus(id, newStatus);
         return ResponseEntity.noContent().build();
-    }
-
-    //деактивация комнаты
-    @DeleteMapping("/{roomId}")
-    public ResponseEntity<RoomResponse> deactivateRoom(@PathVariable("roomId") Long id){
-        return ResponseEntity.ok(roomService.deactivateRoom(id));
     }
 }
