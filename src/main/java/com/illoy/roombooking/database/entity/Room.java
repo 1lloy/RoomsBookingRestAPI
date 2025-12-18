@@ -28,6 +28,7 @@ public class Room {
     
     private Integer capacity;
 
+    @Builder.Default
     private boolean isActive = true;
 
     @CreationTimestamp

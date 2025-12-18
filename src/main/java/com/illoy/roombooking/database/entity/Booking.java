@@ -27,6 +27,7 @@ public class Booking {
     private LocalDateTime endTime;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private BookingStatus status = BookingStatus.CONFIRMED;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -27,6 +27,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @Builder.Default
     private boolean isActive = true;
-
 }

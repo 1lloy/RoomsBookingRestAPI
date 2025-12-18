@@ -4,10 +4,7 @@ import com.illoy.roombooking.database.entity.Booking;
 import com.illoy.roombooking.dto.request.BookingCreateRequest;
 import com.illoy.roombooking.dto.request.BookingStatusUpdateRequest;
 import com.illoy.roombooking.dto.response.BookingResponse;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring",
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -20,5 +17,6 @@ public interface BookingMapper {
     @Mapping(target = "roomCapacity", source = "room.capacity")
     BookingResponse toResponse(Booking booking);
 
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     Booking toEntity(BookingCreateRequest request);
 }
