@@ -11,12 +11,6 @@ import com.illoy.roombooking.dto.response.RoomResponse;
 import com.illoy.roombooking.dto.response.TimeSlot;
 import com.illoy.roombooking.exception.*;
 import com.illoy.roombooking.mapper.RoomMapper;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -24,6 +18,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -40,24 +39,23 @@ public class RoomService {
     }
 
     public Page<RoomResponse> findAllActive(Pageable pageable) {
-        return roomRepository.findByIsActiveTrue(pageable)
-                .map(roomMapper::toResponse);
+        return roomRepository.findByIsActiveTrue(pageable).map(roomMapper::toResponse);
     }
 
     public List<RoomResponse> findAll() {
-        return roomRepository.findAll().stream()
-                .map(roomMapper::toResponse)
-                .collect(Collectors.toList());
+        return roomRepository.findAll().stream().map(roomMapper::toResponse).collect(Collectors.toList());
     }
 
     public RoomResponse findActiveRoomById(Long id) {
-        return roomRepository.findByIdAndIsActiveTrue(id)
+        return roomRepository
+                .findByIdAndIsActiveTrue(id)
                 .map(roomMapper::toResponse)
                 .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + id));
     }
 
     public RoomResponse findById(Long id) {
-        return roomRepository.findById(id)
+        return roomRepository
+                .findById(id)
                 .map(roomMapper::toResponse)
                 .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + id));
     }
@@ -79,7 +77,8 @@ public class RoomService {
     }
 
     public RoomAvailabilityResponse checkAvailability(Long id, LocalDateTime startTime, LocalDateTime endTime) {
-        roomRepository.findByIdAndIsActiveTrue(id)
+        roomRepository
+                .findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + id));
 
         // Проверяем доступность на конкретный интервал
@@ -109,11 +108,7 @@ public class RoomService {
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
         return bookingRepository.findByRoomIdAndStartTimeBetweenAndStatusIn(
-                roomId,
-                startOfDay,
-                endOfDay,
-                List.of(BookingStatus.CONFIRMED, BookingStatus.PENDING)
-        );
+                roomId, startOfDay, endOfDay, List.of(BookingStatus.CONFIRMED, BookingStatus.PENDING));
     }
 
     private List<TimeSlot> mapToTimeSlots(List<Booking> bookings) {
@@ -121,8 +116,7 @@ public class RoomService {
                 .map(booking -> new TimeSlot(
                         booking.getStartTime().toLocalTime(),
                         booking.getEndTime().toLocalTime(),
-                        booking.getStatus()
-                ))
+                        booking.getStatus()))
                 .sorted(Comparator.comparing(TimeSlot::getStartTime))
                 .collect(Collectors.toList());
     }
@@ -147,11 +141,12 @@ public class RoomService {
     @Transactional
     public RoomResponse update(Long id, RoomCreateEditRequest request) {
 
-        Room room = roomRepository.findById(id)
+        Room room = roomRepository
+                .findById(id)
                 .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + id));
 
-        if (!room.getName().equals(request.getName()) &&
-                roomRepository.existsByNameAndIsActiveTrue(request.getName())) {
+        if (!room.getName().equals(request.getName())
+                && roomRepository.existsByNameAndIsActiveTrue(request.getName())) {
             throw new RoomAlreadyExistsException("Room with name already exists: " + request.getName());
         }
 
@@ -162,31 +157,27 @@ public class RoomService {
 
     @Transactional
     public void updateRoomStatus(Long roomId, boolean active) {
-        Room room = roomRepository.findById(roomId)
+        Room room = roomRepository
+                .findById(roomId)
                 .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + roomId));
 
         if (room.isActive() == active) {
             throw new RoomStatusConflictException(
-                    String.format("Room already has status: %s", active ? "active" : "inactive")
-            );
+                    String.format("Room already has status: %s", active ? "active" : "inactive"));
         }
 
-        if (!active){
+        if (!active) {
             if (!hasActiveBookings(roomId)) roomRepository.updateRoomStatus(roomId, false);
-            else throw new RoomHasActiveBookingsException(
-                    "Cannot delete room with active bookings. Cancel bookings first."
-            );
-        }
-        else roomRepository.updateRoomStatus(roomId, true);
+            else
+                throw new RoomHasActiveBookingsException(
+                        "Cannot delete room with active bookings. Cancel bookings first.");
+        } else roomRepository.updateRoomStatus(roomId, true);
     }
 
     private boolean hasActiveBookings(Long roomId) {
         // Ищем активные бронирования (текущие и будущие)
         List<Booking> activeBookings = bookingRepository.findConflictingBookings(
-                roomId,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusYears(100)
-        );
+                roomId, LocalDateTime.now(), LocalDateTime.now().plusYears(100));
 
         return !activeBookings.isEmpty();
     }

@@ -1,33 +1,29 @@
 package com.illoy.roombooking.integration.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.illoy.roombooking.database.entity.User;
 import com.illoy.roombooking.database.entity.UserRole;
 import com.illoy.roombooking.database.repository.UserRepository;
 import com.illoy.roombooking.integration.IntegrationTestBase;
-import jakarta.persistence.EntityManager;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
-import com.illoy.roombooking.database.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 @RequiredArgsConstructor
 public class UserRepositoryTest extends IntegrationTestBase {
 
-    private final UserRepository userRepository;
-
     @Autowired
-    private EntityManager entityManager;
+    private UserRepository userRepository;
 
     @Test
-    void findByEmail(){
+    void findByEmail() {
         User newUser = new User();
         newUser.setEmail("test@gmail.com");
         newUser.setUsername("test");
@@ -38,18 +34,14 @@ public class UserRepositoryTest extends IntegrationTestBase {
 
         Optional<User> result = userRepository.findByEmail("test@gmail.com");
 
-        assertThat(result)
-                .as("User should be found by email")
-                .isPresent()
-                .get()
-                .satisfies(user -> {
-                    assertThat(user.getUsername()).isEqualTo(newUser.getUsername());
-                    assertThat(user.getEmail()).isEqualTo(newUser.getEmail());
-                });
+        assertThat(result).as("User should be found by email").isPresent().get().satisfies(user -> {
+            assertThat(user.getUsername()).isEqualTo(newUser.getUsername());
+            assertThat(user.getEmail()).isEqualTo(newUser.getEmail());
+        });
     }
 
     @Test
-    void findByUsername(){
+    void findByUsername() {
         // positive test
         User newUser = new User();
         newUser.setEmail("test@gmail.com");
@@ -91,7 +83,7 @@ public class UserRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void existsByEmailAndUsername(){
+    void existsByEmailAndUsername() {
         User newUser = new User();
         newUser.setEmail("test@gmail.com");
         newUser.setUsername("test");
@@ -108,11 +100,26 @@ public class UserRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void shouldFindUsersByRoleWithPagination(){
+    void shouldFindUsersByRoleWithPagination() {
         // given
-        User admin1 = User.builder().email("admin1@company.com").username("admin1").password("pass").role(UserRole.ROLE_ADMIN).build();
-        User admin2 = User.builder().email("admin2@company.com").username("admin2").password("pass").role(UserRole.ROLE_ADMIN).build();
-        User user1 = User.builder().email("user1@company.com").username("user1").password("pass").role(UserRole.ROLE_USER).build();
+        User admin1 = User.builder()
+                .email("admin1@company.com")
+                .username("admin1")
+                .password("pass")
+                .role(UserRole.ROLE_ADMIN)
+                .build();
+        User admin2 = User.builder()
+                .email("admin2@company.com")
+                .username("admin2")
+                .password("pass")
+                .role(UserRole.ROLE_ADMIN)
+                .build();
+        User user1 = User.builder()
+                .email("user1@company.com")
+                .username("user1")
+                .password("pass")
+                .role(UserRole.ROLE_USER)
+                .build();
 
         userRepository.saveAll(List.of(admin1, admin2, user1));
 
@@ -137,15 +144,35 @@ public class UserRepositoryTest extends IntegrationTestBase {
     @Test
     void shouldReturnOnlyActiveUsersWithRoleUserWithPagination() {
         // given
-        User activeUser1 = User.builder().email("u1@company.com").username("user1").password("pass").role(UserRole.ROLE_USER)
-                .isActive(true).build();
-        User activeUser2 = User.builder().email("u2@company.com").username("user2").password("pass").role(UserRole.ROLE_USER)
-                .isActive(true).build();
+        User activeUser1 = User.builder()
+                .email("u1@company.com")
+                .username("user1")
+                .password("pass")
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User activeUser2 = User.builder()
+                .email("u2@company.com")
+                .username("user2")
+                .password("pass")
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
 
-        User inactiveUser = User.builder().email("u3@company.com").username("user3").password("pass").role(UserRole.ROLE_USER)
-                .isActive(false).build();
-        User activeAdmin = User.builder().email("admin@company.com").username("admin").password("pass").role(UserRole.ROLE_ADMIN)
-                .isActive(true).build();
+        User inactiveUser = User.builder()
+                .email("u3@company.com")
+                .username("user3")
+                .password("pass")
+                .role(UserRole.ROLE_USER)
+                .isActive(false)
+                .build();
+        User activeAdmin = User.builder()
+                .email("admin@company.com")
+                .username("admin")
+                .password("pass")
+                .role(UserRole.ROLE_ADMIN)
+                .isActive(true)
+                .build();
 
         userRepository.saveAll(List.of(activeUser1, activeUser2, inactiveUser, activeAdmin));
 
@@ -167,9 +194,14 @@ public class UserRepositoryTest extends IntegrationTestBase {
 
     @Test
     void shouldUpdateUserStatus() {
-        //given
-        User user = User.builder().email("john@company.com").username("john").password("pass").role(UserRole.ROLE_USER)
-                .isActive(true).build();
+        // given
+        User user = User.builder()
+                .email("john@company.com")
+                .username("john")
+                .password("pass")
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
 
         user = userRepository.save(user);
 
@@ -185,12 +217,27 @@ public class UserRepositoryTest extends IntegrationTestBase {
     @Test
     void shouldCountOnlyUsersWithRoleUser() {
         // given
-        User user1 = User.builder().email("user1@company.com").username("user1").password("pass").role(UserRole.ROLE_USER)
-                .isActive(true).build();
-        User user2 = User.builder().email("user2@company.com").username("user2").password("pass").role(UserRole.ROLE_USER)
-                .isActive(true).build();
-        User admin = User.builder().email("admin@company.com").username("admin1").password("pass").role(UserRole.ROLE_ADMIN)
-                .isActive(true).build();
+        User user1 = User.builder()
+                .email("user1@company.com")
+                .username("user1")
+                .password("pass")
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user2 = User.builder()
+                .email("user2@company.com")
+                .username("user2")
+                .password("pass")
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User admin = User.builder()
+                .email("admin@company.com")
+                .username("admin1")
+                .password("pass")
+                .role(UserRole.ROLE_ADMIN)
+                .isActive(true)
+                .build();
 
         userRepository.saveAll(List.of(user1, user2, admin));
 

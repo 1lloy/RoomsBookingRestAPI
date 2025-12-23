@@ -11,6 +11,9 @@ import com.illoy.roombooking.exception.UserCreationException;
 import com.illoy.roombooking.exception.UsernameAlreadyExistsException;
 import com.illoy.roombooking.exception.UsernameStatusConflictException;
 import com.illoy.roombooking.mapper.UserMapper;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +21,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,34 +32,27 @@ public class UserService {
     private final UserMapper userMapper;
 
     public Optional<UserResponse> findByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .map(userMapper::toResponse);
+        return userRepository.findByUsername(username).map(userMapper::toResponse);
     }
 
     public Optional<UserResponse> findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .map(userMapper::toResponse);
+        return userRepository.findByEmail(email).map(userMapper::toResponse);
     }
 
     public Page<UserResponse> findByRole(UserRole role, Pageable pageable) {
-        return userRepository.findByRole(role, pageable)
-                .map(userMapper::toResponse);
+        return userRepository.findByRole(role, pageable).map(userMapper::toResponse);
     }
 
     public Page<UserResponse> findAllActiveUsers(Pageable pageable) {
-        return userRepository.findAllActiveUsers(pageable)
-                .map(userMapper::toResponse);
+        return userRepository.findAllActiveUsers(pageable).map(userMapper::toResponse);
     }
 
     public List<UserResponse> findAll() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toResponse)
-                .collect(Collectors.toList());
+        return userRepository.findAll().stream().map(userMapper::toResponse).collect(Collectors.toList());
     }
 
     public Optional<UserResponse> findById(Long id) {
-        return userRepository.findById(id)
-                .map(userMapper::toResponse);
+        return userRepository.findById(id).map(userMapper::toResponse);
     }
 
     public long countActiveUsers() {
@@ -91,12 +83,13 @@ public class UserService {
     @Transactional
     public Optional<UserResponse> update(Long id, UserEditRequest editRequest) {
 
-
-        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
+        User user = userRepository
+                .findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
 
         if (editRequest.getEmail() != null) {
-            if (!user.getEmail().equals(editRequest.getEmail()) &&
-                    userRepository.existsByEmail(editRequest.getEmail())) {
+            if (!user.getEmail().equals(editRequest.getEmail())
+                    && userRepository.existsByEmail(editRequest.getEmail())) {
                 throw new EmailAlreadyExistsException("Email already busy: " + editRequest.getEmail());
             }
             user.setEmail(editRequest.getEmail());
@@ -112,7 +105,8 @@ public class UserService {
 
     @Transactional
     public boolean updateStatus(Long userId, boolean active) {
-        User user = userRepository.findById(userId)
+        User user = userRepository
+                .findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("Failed to retrieve user with id: " + userId));
 
         if (user.isActive() != active) {

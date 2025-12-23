@@ -9,6 +9,8 @@ import com.illoy.roombooking.security.AuthenticationService;
 import com.illoy.roombooking.service.BookingService;
 import com.illoy.roombooking.service.UserService;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,9 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -31,27 +30,29 @@ public class UserController {
     private final BookingService bookingService;
     private final AuthenticationService authenticationService;
 
-    //получение текущего пользователя
+    // получение текущего пользователя
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser() {
-        UserResponse userResponse = userService.findById(authenticationService.getCurrentUserId())
-                .orElseThrow(
-                        () -> new UsernameNotFoundException("User with id = " + authenticationService.getCurrentUserId() + " not found")
-                );
+        UserResponse userResponse = userService
+                .findById(authenticationService.getCurrentUserId())
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User with id = " + authenticationService.getCurrentUserId() + " not found"));
 
         return ResponseEntity.ok(userResponse);
     }
 
-    //обновление пользователя
+    // обновление пользователя
     @PutMapping("/me")
     public ResponseEntity<UserResponse> updateCurrentUser(@Valid @RequestBody UserEditRequest editRequest) {
-        UserResponse updatedUser = userService.update(authenticationService.getCurrentUserId(), editRequest)
-                .orElseThrow(() -> new UserUpdateException("Failed to update user with id: " + authenticationService.getCurrentUserId()));
+        UserResponse updatedUser = userService
+                .update(authenticationService.getCurrentUserId(), editRequest)
+                .orElseThrow(() -> new UserUpdateException(
+                        "Failed to update user with id: " + authenticationService.getCurrentUserId()));
 
         return ResponseEntity.ok(updatedUser);
     }
 
-    //получить бронирования пользователя
+    // получить бронирования пользователя
     @GetMapping("/me/bookings")
     public ResponseEntity<List<BookingResponse>> getUserBookings(
             @RequestParam(defaultValue = "0") int page,

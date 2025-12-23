@@ -1,15 +1,13 @@
 package com.illoy.roombooking.security;
 
 import com.illoy.roombooking.database.entity.User;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @AllArgsConstructor
 public class UserPrincipal implements UserDetails {
@@ -22,16 +20,9 @@ public class UserPrincipal implements UserDetails {
 
     public static UserPrincipal build(User user) {
         List<GrantedAuthority> authorities = Collections.singletonList(
-                new SimpleGrantedAuthority(user.getRole().name())
-        );
+                new SimpleGrantedAuthority(user.getRole().name()));
 
-        return new UserPrincipal(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getPassword(),
-                authorities
-        );
+        return new UserPrincipal(user.getId(), user.getUsername(), user.getEmail(), user.getPassword(), authorities);
     }
 
     @Override

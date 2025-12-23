@@ -21,7 +21,8 @@ public class AuthenticationService {
         }
 
         String username = authentication.getName();
-        return userRepository.findByUsername(username)
+        return userRepository
+                .findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
     }
 

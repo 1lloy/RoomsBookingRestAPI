@@ -1,0 +1,1 @@
+TRUNCATE TABLE bookings, rooms, users RESTART IDENTITY CASCADE;

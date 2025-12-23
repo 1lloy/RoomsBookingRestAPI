@@ -19,10 +19,12 @@ public class SwaggerConfig {
                         .description("REST API for room booking system"))
                 .addSecurityItem(new SecurityRequirement().addList("JWT"))
                 .components(new Components()
-                        .addSecuritySchemes("JWT", new SecurityScheme()
-                                .name("JWT")
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")));
+                        .addSecuritySchemes(
+                                "JWT",
+                                new SecurityScheme()
+                                        .name("JWT")
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")));
     }
 }

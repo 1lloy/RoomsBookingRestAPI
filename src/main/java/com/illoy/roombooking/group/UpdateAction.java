@@ -1,4 +1,3 @@
 package com.illoy.roombooking.group;
 
-public interface UpdateAction {
-}
+public interface UpdateAction {}

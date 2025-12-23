@@ -1,5 +1,10 @@
 package com.illoy.roombooking.integration.controller.admin;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.illoy.roombooking.database.entity.*;
@@ -9,34 +14,40 @@ import com.illoy.roombooking.database.repository.UserRepository;
 import com.illoy.roombooking.dto.request.LoginRequest;
 import com.illoy.roombooking.dto.response.JwtResponse;
 import com.illoy.roombooking.integration.IntegrationTestBase;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @RequiredArgsConstructor
 @AutoConfigureMockMvc
 public class AnalyticsControllerTest extends IntegrationTestBase {
 
-    private final MockMvc mockMvc;
-    private final UserRepository userRepository;
-    private final BookingRepository bookingRepository;
-    private final RoomRepository roomRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private String jwtToken;
     private String USER_2_NAME;
@@ -44,48 +55,95 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
 
     @BeforeEach
     void setup() throws Exception {
-        User user2 = User.builder().username("anna").email("anna@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(true).build();
-        User user3 = User.builder().username("oleg").email("oleg@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(true).build();
-        User user4 = User.builder().username("nikol").email("kolya@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(false).build();
-        User admin = User.builder().username("admin1").email("mark@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_ADMIN).isActive(true).build();
+        User user2 = User.builder()
+                .username("anna")
+                .email("anna@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user3 = User.builder()
+                .username("oleg")
+                .email("oleg@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user4 = User.builder()
+                .username("nikol")
+                .email("kolya@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(false)
+                .build();
+        User admin = User.builder()
+                .username("admin1")
+                .email("mark@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_ADMIN)
+                .isActive(true)
+                .build();
 
         USER_2_NAME = user2.getUsername();
         USER_3_NAME = user3.getUsername();
 
         userRepository.saveAll(List.of(user2, user3, user4, admin));
 
-        Room room1 = Room.builder().name("Conference Room A").capacity(20).isActive(true).build();
-        Room room2 = Room.builder().name("Meeting Room B").capacity(10).isActive(true).build();
-        Room room3 = Room.builder().name("Small Room C").capacity(2).isActive(true).build();
-        Room room4 = Room.builder().name("Training Room D").capacity(15).isActive(false).build();
+        Room room1 = Room.builder()
+                .name("Conference Room A")
+                .capacity(20)
+                .isActive(true)
+                .build();
+        Room room2 = Room.builder()
+                .name("Meeting Room B")
+                .capacity(10)
+                .isActive(true)
+                .build();
+        Room room3 =
+                Room.builder().name("Small Room C").capacity(2).isActive(true).build();
+        Room room4 = Room.builder()
+                .name("Training Room D")
+                .capacity(15)
+                .isActive(false)
+                .build();
 
         roomRepository.saveAll(List.of(room1, room2, room3, room4));
 
-        Booking booking1 = Booking.builder().room(room1).user(user2)
+        Booking booking1 = Booking.builder()
+                .room(room1)
+                .user(user2)
                 .startTime(LocalDateTime.of(2025, 1, 20, 9, 0))
                 .endTime(LocalDateTime.of(2025, 1, 20, 10, 30))
                 .status(BookingStatus.COMPLETED)
                 .build();
 
-        Booking booking2 = Booking.builder().room(room2).user(user3)
+        Booking booking2 = Booking.builder()
+                .room(room2)
+                .user(user3)
                 .startTime(LocalDateTime.of(2100, 1, 20, 10, 0))
                 .endTime(LocalDateTime.of(2100, 1, 20, 11, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking3 = Booking.builder().room(room1).user(user3)
+        Booking booking3 = Booking.builder()
+                .room(room1)
+                .user(user3)
                 .startTime(LocalDateTime.of(2100, 1, 20, 11, 0))
                 .endTime(LocalDateTime.of(2100, 1, 20, 12, 30))
                 .status(BookingStatus.CANCELLED)
                 .build();
 
-        Booking booking4 = Booking.builder().room(room3).user(user2)
+        Booking booking4 = Booking.builder()
+                .room(room3)
+                .user(user2)
                 .startTime(LocalDateTime.of(2100, 1, 20, 14, 0))
                 .endTime(LocalDateTime.of(2100, 1, 20, 15, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking5 = Booking.builder().room(room3).user(user2)
+        Booking booking5 = Booking.builder()
+                .room(room3)
+                .user(user2)
                 .startTime(LocalDateTime.of(2100, 1, 22, 15, 30))
                 .endTime(LocalDateTime.of(2100, 1, 22, 17, 0))
                 .status(BookingStatus.CONFIRMED)
@@ -93,7 +151,8 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
 
         bookingRepository.saveAll(List.of(booking1, booking2, booking3, booking4, booking5));
 
-        LoginRequest loginRequest = LoginRequest.builder().username("admin1").password("123").build();
+        LoginRequest loginRequest =
+                LoginRequest.builder().username("admin1").password("123").build();
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +173,7 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
                 .andReturn();
 
         String jsonResponse = result.getResponse().getContentAsString();
-        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>(){});
+        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>() {});
 
         assertEquals(1, responseMap.size());
         assertEquals(2, responseMap.get("activeUsersCount"));
@@ -129,7 +188,7 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
                 .andReturn();
 
         String jsonResponse = result.getResponse().getContentAsString();
-        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>(){});
+        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>() {});
 
         assertEquals(1, responseMap.size());
         assertEquals(3, responseMap.get("activeRoomsCount"));
@@ -149,7 +208,7 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
                 .andReturn();
 
         String jsonResponse = result.getResponse().getContentAsString();
-        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>(){});
+        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>() {});
 
         assertEquals(1, responseMap.size());
         assertEquals(3, responseMap.get("bookingsCount"));
@@ -169,7 +228,7 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
                 .andReturn();
 
         String jsonResponse = result.getResponse().getContentAsString();
-        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>(){});
+        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>() {});
 
         assertEquals(2, responseMap.size());
         assertEquals(1, responseMap.get("CANCELLED"));
@@ -191,7 +250,7 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
                 .andReturn();
 
         String jsonResponse = result.getResponse().getContentAsString();
-        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>(){});
+        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>() {});
 
         assertEquals(2, responseMap.size());
         assertEquals(2, responseMap.get("Small Room C"));
@@ -212,7 +271,7 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
                 .andReturn();
 
         String jsonResponse = result.getResponse().getContentAsString();
-        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>(){});
+        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>() {});
 
         assertEquals(2, responseMap.size());
         assertEquals(3, responseMap.get(USER_2_NAME));
@@ -233,7 +292,7 @@ public class AnalyticsControllerTest extends IntegrationTestBase {
                 .andReturn();
 
         String jsonResponse = result.getResponse().getContentAsString();
-        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>(){});
+        Map<String, Long> responseMap = objectMapper.readValue(jsonResponse, new TypeReference<>() {});
 
         assertEquals(3, responseMap.size());
         assertEquals(1, responseMap.get("Monday"));

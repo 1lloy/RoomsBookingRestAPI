@@ -1,5 +1,10 @@
 package com.illoy.roombooking.integration.controller.admin;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.illoy.roombooking.database.entity.*;
@@ -10,37 +15,38 @@ import com.illoy.roombooking.dto.request.BookingStatusUpdateRequest;
 import com.illoy.roombooking.dto.request.LoginRequest;
 import com.illoy.roombooking.dto.response.BookingResponse;
 import com.illoy.roombooking.dto.response.JwtResponse;
-import com.illoy.roombooking.dto.response.UserResponse;
 import com.illoy.roombooking.exception.ErrorResponse;
 import com.illoy.roombooking.integration.IntegrationTestBase;
 import com.jayway.jsonpath.JsonPath;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@RequiredArgsConstructor
-@AutoConfigureMockMvc
 public class AdminBookingControllerTest extends IntegrationTestBase {
 
-    private final MockMvc mockMvc;
-    private final UserRepository userRepository;
-    private final BookingRepository bookingRepository;
-    private final RoomRepository roomRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private String jwtToken;
 
@@ -51,50 +57,94 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
 
     @BeforeEach
     void setup() throws Exception {
-        User user2 = User.builder().username("anna").email("anna@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(true).build();
-        User user3 = User.builder().username("oleg").email("oleg@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(true).build();
-        User user4 = User.builder().username("nikol").email("kolya@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(false).build();
-        User admin = User.builder().username("admin1").email("mark@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_ADMIN).isActive(true).build();
+        User user2 = User.builder()
+                .username("anna")
+                .email("anna@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user3 = User.builder()
+                .username("oleg")
+                .email("oleg@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user4 = User.builder()
+                .username("nikol")
+                .email("kolya@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(false)
+                .build();
+        User admin = User.builder()
+                .username("admin1")
+                .email("mark@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_ADMIN)
+                .isActive(true)
+                .build();
 
         userRepository.saveAll(List.of(user2, user3, user4, admin));
 
         USER = user2;
 
-        Room room1 = Room.builder().name("Conference Room A").capacity(20).isActive(true).build();
-        Room room2 = Room.builder().name("Meeting Room B").capacity(10).isActive(true).build();
-        Room room3 = Room.builder().name("Small Room C").capacity(2).isActive(true).build();
-        Room room4 = Room.builder().name("Training Room D").capacity(15).isActive(false).build();
+        Room room1 = Room.builder()
+                .name("Conference Room A")
+                .capacity(20)
+                .isActive(true)
+                .build();
+        Room room2 = Room.builder()
+                .name("Meeting Room B")
+                .capacity(10)
+                .isActive(true)
+                .build();
+        Room room3 =
+                Room.builder().name("Small Room C").capacity(2).isActive(true).build();
+        Room room4 = Room.builder()
+                .name("Training Room D")
+                .capacity(15)
+                .isActive(false)
+                .build();
 
         roomRepository.saveAll(List.of(room1, room2, room3, room4));
 
-        ROOM_ID = room2.getId();
-        ROOM = room2;
-
-        Booking booking1 = Booking.builder().room(room1).user(user2)
+        Booking booking1 = Booking.builder()
+                .room(room1)
+                .user(user2)
                 .startTime(LocalDateTime.of(2025, 1, 20, 9, 0))
                 .endTime(LocalDateTime.of(2025, 1, 20, 10, 30))
                 .status(BookingStatus.COMPLETED)
                 .build();
 
-        Booking booking2 = Booking.builder().room(room2).user(user3)
+        Booking booking2 = Booking.builder()
+                .room(room2)
+                .user(user3)
                 .startTime(LocalDateTime.of(2100, 1, 20, 10, 0))
                 .endTime(LocalDateTime.of(2100, 1, 20, 11, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking3 = Booking.builder().room(room1).user(user3)
+        Booking booking3 = Booking.builder()
+                .room(room1)
+                .user(user3)
                 .startTime(LocalDateTime.of(2100, 1, 20, 11, 0))
                 .endTime(LocalDateTime.of(2100, 1, 20, 12, 30))
                 .status(BookingStatus.CANCELLED)
                 .build();
 
-        Booking booking4 = Booking.builder().room(room3).user(user2)
+        Booking booking4 = Booking.builder()
+                .room(room3)
+                .user(user2)
                 .startTime(LocalDateTime.of(2100, 1, 20, 14, 0))
                 .endTime(LocalDateTime.of(2100, 1, 20, 15, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking5 = Booking.builder().room(room3).user(user2)
+        Booking booking5 = Booking.builder()
+                .room(room3)
+                .user(user2)
                 .startTime(LocalDateTime.of(2100, 1, 22, 15, 30))
                 .endTime(LocalDateTime.of(2100, 1, 22, 17, 0))
                 .status(BookingStatus.CONFIRMED)
@@ -104,7 +154,8 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
 
         BOOKING_ID = booking4.getId();
 
-        LoginRequest loginRequest = LoginRequest.builder().username("admin1").password("123").build();
+        LoginRequest loginRequest =
+                LoginRequest.builder().username("admin1").password("123").build();
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -153,7 +204,8 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        List<BookingResponse> bookings = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>(){});
+        List<BookingResponse> bookings =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(bookings).hasSize(5);
         assertThat(bookings).anyMatch(booking -> booking.getStatus() != BookingStatus.CANCELLED);
@@ -193,7 +245,8 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
         assertEquals("USER_NOT_FOUND", errorResponse.getError());
         assertEquals("User not found with id: -999", errorResponse.getMessage());
@@ -203,7 +256,9 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
 
     @Test
     void updateBookingStatus_shouldReturnBookingResponse() throws Exception {
-        BookingStatusUpdateRequest request = BookingStatusUpdateRequest.builder().status(BookingStatus.CANCELLED).build();
+        BookingStatusUpdateRequest request = BookingStatusUpdateRequest.builder()
+                .status(BookingStatus.CANCELLED)
+                .build();
 
         MvcResult result = mockMvc.perform(patch("/api/admin/bookings/{bookingId}/status", BOOKING_ID)
                         .header("Authorization", "Bearer " + jwtToken)
@@ -212,7 +267,8 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        BookingResponse bookingResponse = objectMapper.readValue(result.getResponse().getContentAsString(), BookingResponse.class);
+        BookingResponse bookingResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), BookingResponse.class);
 
         assertEquals(BookingStatus.CANCELLED, bookingResponse.getStatus());
         assertEquals(BOOKING_ID, bookingResponse.getId());
@@ -220,7 +276,9 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
 
     @Test
     void updateBookingStatus_shouldReturnBookingNotFoundException() throws Exception {
-        BookingStatusUpdateRequest request = BookingStatusUpdateRequest.builder().status(BookingStatus.CANCELLED).build();
+        BookingStatusUpdateRequest request = BookingStatusUpdateRequest.builder()
+                .status(BookingStatus.CANCELLED)
+                .build();
 
         MvcResult result = mockMvc.perform(patch("/api/admin/bookings/{bookingId}/status", -999L)
                         .header("Authorization", "Bearer " + jwtToken)
@@ -229,7 +287,8 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
         assertEquals("BOOKING_NOT_FOUND", errorResponse.getError());
         assertEquals("Booking not found with id: -999", errorResponse.getMessage());
@@ -239,7 +298,9 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
 
     @Test
     void updateBookingStatus_shouldReturnBookingStatusConflictException() throws Exception {
-        BookingStatusUpdateRequest request = BookingStatusUpdateRequest.builder().status(BookingStatus.CONFIRMED).build();
+        BookingStatusUpdateRequest request = BookingStatusUpdateRequest.builder()
+                .status(BookingStatus.CONFIRMED)
+                .build();
 
         MvcResult result = mockMvc.perform(patch("/api/admin/bookings/{bookingId}/status", BOOKING_ID)
                         .header("Authorization", "Bearer " + jwtToken)
@@ -248,7 +309,8 @@ public class AdminBookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
         assertEquals("BOOKING_STATUS_CONFLICT", errorResponse.getError());
         assertEquals("Booking already has status: CONFIRMED", errorResponse.getMessage());

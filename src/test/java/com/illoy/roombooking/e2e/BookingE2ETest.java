@@ -1,5 +1,7 @@
 package com.illoy.roombooking.e2e;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.illoy.roombooking.database.entity.BookingStatus;
 import com.illoy.roombooking.dto.request.BookingCreateRequest;
 import com.illoy.roombooking.dto.request.LoginRequest;
@@ -9,6 +11,9 @@ import com.illoy.roombooking.dto.response.BookingResponse;
 import com.illoy.roombooking.dto.response.RoomResponse;
 import com.illoy.roombooking.dto.response.UserResponse;
 import com.illoy.roombooking.exception.ErrorResponse;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterAll;
@@ -28,17 +33,12 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 @RequiredArgsConstructor
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Testcontainers
-@Sql({"classpath:sql/test_data.sql"})
+@Sql(scripts = "classpath:sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+@Sql(scripts = "classpath:sql/test_data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 public class BookingE2ETest {
 
     @Container
@@ -48,8 +48,10 @@ public class BookingE2ETest {
     private TestRestTemplate restTemplate;
 
     @DynamicPropertySource
-    static void postgresProperties(DynamicPropertyRegistry registry){
+    static void postgresProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
+        registry.add("spring.datasource.username", container::getUsername);
+        registry.add("spring.datasource.password", container::getPassword);
     }
 
     @AfterAll
@@ -61,15 +63,14 @@ public class BookingE2ETest {
 
     // вспомогательный метод для получения JWT токена
     private String getAuthToken(String username, String password) {
-        LoginRequest loginRequest = LoginRequest.builder().username(username).password(password).build();
+        LoginRequest loginRequest =
+                LoginRequest.builder().username(username).password(password).build();
 
-        ResponseEntity<Map<String, Object>> loginResponse = restTemplate
-                .exchange(
-                        "/api/auth/login",
-                        HttpMethod.POST,
-                        new HttpEntity<>(loginRequest),
-                        new ParameterizedTypeReference<Map<String, Object>>() {}
-                );
+        ResponseEntity<Map<String, Object>> loginResponse = restTemplate.exchange(
+                "/api/auth/login",
+                HttpMethod.POST,
+                new HttpEntity<>(loginRequest),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
 
         assertThat(loginResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -93,7 +94,7 @@ public class BookingE2ETest {
     // вспомогательный метод для создания заголовка с JWT
     private HttpHeaders createAuthHeaders(String token) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token); // 🔧 Используем Bearer аутентификацию
+        headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
         return headers;
     }
@@ -105,20 +106,29 @@ public class BookingE2ETest {
         String adminToken = getAuthToken("admin", "admin123");
 
         // === 2. ADMIN создает комнату ===
-        RoomCreateEditRequest roomRequest = RoomCreateEditRequest.builder().name("E2E Conference").description("Room for E2E tests").capacity(15).build();
-        HttpEntity<RoomCreateEditRequest> roomRequestEntity = new HttpEntity<>(roomRequest, createAuthHeaders(adminToken));
+        RoomCreateEditRequest roomRequest = RoomCreateEditRequest.builder()
+                .name("E2E Conference")
+                .description("Room for E2E tests")
+                .capacity(15)
+                .build();
+        HttpEntity<RoomCreateEditRequest> roomRequestEntity =
+                new HttpEntity<>(roomRequest, createAuthHeaders(adminToken));
 
-        ResponseEntity<RoomResponse> roomResponse = restTemplate
-                .exchange("/api/admin/rooms", HttpMethod.POST, roomRequestEntity, RoomResponse.class);
+        ResponseEntity<RoomResponse> roomResponse =
+                restTemplate.exchange("/api/admin/rooms", HttpMethod.POST, roomRequestEntity, RoomResponse.class);
 
         assertThat(roomResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(roomResponse.getBody()).isNotNull();
         Long roomId = roomResponse.getBody().getId();
 
         // === 3. USER регистрируется ===
-        RegisterRequest userRequest = RegisterRequest.builder().username("e2euser").password("user123").email("user@test.com").build();
-        ResponseEntity<UserResponse> userResponse = restTemplate
-                .postForEntity("/api/auth/register", userRequest, UserResponse.class);
+        RegisterRequest userRequest = RegisterRequest.builder()
+                .username("e2euser")
+                .password("user123")
+                .email("user@test.com")
+                .build();
+        ResponseEntity<UserResponse> userResponse =
+                restTemplate.postForEntity("/api/auth/register", userRequest, UserResponse.class);
 
         assertThat(userResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -132,10 +142,11 @@ public class BookingE2ETest {
                 .endTime(LocalDateTime.now().plusDays(1).withHour(12).withMinute(0))
                 .build();
 
-        HttpEntity<BookingCreateRequest> bookingRequestEntity = new HttpEntity<>(bookingRequest, createAuthHeaders(userToken));
+        HttpEntity<BookingCreateRequest> bookingRequestEntity =
+                new HttpEntity<>(bookingRequest, createAuthHeaders(userToken));
 
-        ResponseEntity<BookingResponse> bookingResponse = restTemplate
-                .exchange("/api/bookings", HttpMethod.POST, bookingRequestEntity, BookingResponse.class);
+        ResponseEntity<BookingResponse> bookingResponse =
+                restTemplate.exchange("/api/bookings", HttpMethod.POST, bookingRequestEntity, BookingResponse.class);
 
         assertThat(bookingResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(bookingResponse.getBody()).isNotNull();
@@ -150,21 +161,18 @@ public class BookingE2ETest {
                         "/api/users/me/bookings",
                         HttpMethod.GET,
                         getBookingsEntity,
-                        new ParameterizedTypeReference<List<BookingResponse>>() {}
-                );
+                        new ParameterizedTypeReference<List<BookingResponse>>() {});
 
         assertThat(bookingsResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(bookingsResponse.getBody()).hasSize(1);
         assertThat(bookingsResponse.getBody().getFirst().getId()).isEqualTo(bookingId);
 
         // === 7. Пользователь проверяет свой профиль (возьмем id из UserResponse) ===
-        ResponseEntity<UserResponse> userResponseAfterMe = restTemplate
-                .exchange(
-                        "/api/users/me",
-                        HttpMethod.GET,
-                        getBookingsEntity, // используем тот же заголовок
-                        UserResponse.class
-                );
+        ResponseEntity<UserResponse> userResponseAfterMe = restTemplate.exchange(
+                "/api/users/me",
+                HttpMethod.GET,
+                getBookingsEntity, // используем тот же заголовок
+                UserResponse.class);
 
         Assertions.assertNotNull(userResponseAfterMe.getBody());
         Long userId = userResponseAfterMe.getBody().getId();
@@ -172,14 +180,12 @@ public class BookingE2ETest {
         // === 8. ADMIN видит бронь в системе ===
         HttpEntity<Void> adminRequestEntity = new HttpEntity<>(createAuthHeaders(adminToken));
 
-        ResponseEntity<Map<String, Object>> userBookingsResponse = restTemplate
-                .exchange(
-                        "/api/admin/bookings/user/{userId}?page=0&size=20",
-                        HttpMethod.GET,
-                        adminRequestEntity,
-                        new ParameterizedTypeReference<Map<String, Object>>() {},
-                        userId
-                );
+        ResponseEntity<Map<String, Object>> userBookingsResponse = restTemplate.exchange(
+                "/api/admin/bookings/user/{userId}?page=0&size=20",
+                HttpMethod.GET,
+                adminRequestEntity,
+                new ParameterizedTypeReference<Map<String, Object>>() {},
+                userId);
 
         assertThat(userBookingsResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         Assertions.assertNotNull(userBookingsResponse.getBody());
@@ -203,11 +209,16 @@ public class BookingE2ETest {
         String adminToken = getAuthToken("admin", "admin123");
 
         // === 2. ADMIN создает комнату ===
-        RoomCreateEditRequest roomRequest = RoomCreateEditRequest.builder().name("Conflict Room").description("Room for E2E tests").capacity(15).build();
-        HttpEntity<RoomCreateEditRequest> roomRequestEntity = new HttpEntity<>(roomRequest, createAuthHeaders(adminToken));
+        RoomCreateEditRequest roomRequest = RoomCreateEditRequest.builder()
+                .name("Conflict Room")
+                .description("Room for E2E tests")
+                .capacity(15)
+                .build();
+        HttpEntity<RoomCreateEditRequest> roomRequestEntity =
+                new HttpEntity<>(roomRequest, createAuthHeaders(adminToken));
 
-        ResponseEntity<RoomResponse> roomResponse = restTemplate
-                .exchange("/api/admin/rooms", HttpMethod.POST, roomRequestEntity, RoomResponse.class);
+        ResponseEntity<RoomResponse> roomResponse =
+                restTemplate.exchange("/api/admin/rooms", HttpMethod.POST, roomRequestEntity, RoomResponse.class);
 
         assertThat(roomResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(roomResponse.getBody()).isNotNull();
@@ -218,9 +229,13 @@ public class BookingE2ETest {
         String user2 = "user2";
 
         // === USER_1 регистрируется ===
-        RegisterRequest userRequest1 = RegisterRequest.builder().username(user1).password("user1pass").email("user1@test.com").build();
-        ResponseEntity<ErrorResponse> userResponse1 = restTemplate
-                .postForEntity("/api/auth/register", userRequest1, ErrorResponse.class);
+        RegisterRequest userRequest1 = RegisterRequest.builder()
+                .username(user1)
+                .password("user1pass")
+                .email("user1@test.com")
+                .build();
+        ResponseEntity<ErrorResponse> userResponse1 =
+                restTemplate.postForEntity("/api/auth/register", userRequest1, ErrorResponse.class);
 
         Assertions.assertNotNull(userResponse1.getBody());
         System.out.println(userResponse1.getBody().getError());
@@ -230,9 +245,13 @@ public class BookingE2ETest {
         String user1Token = getAuthToken(user1, "user1pass");
 
         // === USER_2 регистрируется ===
-        RegisterRequest userRequest2 = RegisterRequest.builder().username(user2).password("user2pass").email("user2@test.com").build();
-        ResponseEntity<UserResponse> userResponse2 = restTemplate
-                .postForEntity("/api/auth/register", userRequest2, UserResponse.class);
+        RegisterRequest userRequest2 = RegisterRequest.builder()
+                .username(user2)
+                .password("user2pass")
+                .email("user2@test.com")
+                .build();
+        ResponseEntity<UserResponse> userResponse2 =
+                restTemplate.postForEntity("/api/auth/register", userRequest2, UserResponse.class);
 
         assertThat(userResponse2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -243,12 +262,17 @@ public class BookingE2ETest {
         LocalDateTime end = LocalDateTime.now().plusDays(1).withHour(16);
 
         // user_1 бронирует комнату
-        BookingCreateRequest request1 = BookingCreateRequest.builder().roomId(roomId).startTime(start).endTime(end).build();
+        BookingCreateRequest request1 = BookingCreateRequest.builder()
+                .roomId(roomId)
+                .startTime(start)
+                .endTime(end)
+                .build();
 
-        HttpEntity<BookingCreateRequest> bookingRequestEntity1 = new HttpEntity<>(request1, createAuthHeaders(user1Token));
+        HttpEntity<BookingCreateRequest> bookingRequestEntity1 =
+                new HttpEntity<>(request1, createAuthHeaders(user1Token));
 
-        ResponseEntity<BookingResponse> response1 = restTemplate
-                .exchange("/api/bookings", HttpMethod.POST, bookingRequestEntity1, BookingResponse.class);
+        ResponseEntity<BookingResponse> response1 =
+                restTemplate.exchange("/api/bookings", HttpMethod.POST, bookingRequestEntity1, BookingResponse.class);
 
         assertThat(response1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         Assertions.assertNotNull(response1.getBody());
@@ -256,12 +280,17 @@ public class BookingE2ETest {
         assertThat(response1.getBody().getStatus()).isEqualTo(BookingStatus.CONFIRMED);
 
         // user_2 бронирует ту же комнату и получает ошибку bad_request
-        BookingCreateRequest request2 = BookingCreateRequest.builder().roomId(roomId).startTime(start).endTime(end).build();
+        BookingCreateRequest request2 = BookingCreateRequest.builder()
+                .roomId(roomId)
+                .startTime(start)
+                .endTime(end)
+                .build();
 
-        HttpEntity<BookingCreateRequest> bookingRequestEntity2 = new HttpEntity<>(request2, createAuthHeaders(user2Token));
+        HttpEntity<BookingCreateRequest> bookingRequestEntity2 =
+                new HttpEntity<>(request2, createAuthHeaders(user2Token));
 
-        ResponseEntity<ErrorResponse> response2 = restTemplate
-                .exchange("/api/bookings", HttpMethod.POST, bookingRequestEntity2, ErrorResponse.class);
+        ResponseEntity<ErrorResponse> response2 =
+                restTemplate.exchange("/api/bookings", HttpMethod.POST, bookingRequestEntity2, ErrorResponse.class);
 
         assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         Assertions.assertNotNull(response2.getBody());

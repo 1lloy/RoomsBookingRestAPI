@@ -1,5 +1,11 @@
 package com.illoy.roombooking.integration.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -14,35 +20,36 @@ import com.illoy.roombooking.dto.response.RoomResponse;
 import com.illoy.roombooking.exception.ErrorResponse;
 import com.illoy.roombooking.integration.IntegrationTestBase;
 import com.jayway.jsonpath.JsonPath;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@RequiredArgsConstructor
-@AutoConfigureMockMvc
 public class RoomControllerTest extends IntegrationTestBase {
 
-    private final MockMvc mockMvc;
-    private final UserRepository userRepository;
-    private final BookingRepository bookingRepository;
-    private final RoomRepository roomRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private String jwtToken;
     private Long ACTIVE_ROOM_ID;
@@ -71,21 +78,26 @@ public class RoomControllerTest extends IntegrationTestBase {
         INACTIVE_ROOM_ID = room2.getId();
         AVAILABLE_ROOM_ID = room1.getId();
 
-        Booking booking1 = Booking.builder().room(room1).user(user)
-                .startTime(LocalDateTime.of(2026, 2,10, 10, 0))
-                .endTime(LocalDateTime.of(2026, 2,10, 11, 0))
+        Booking booking1 = Booking.builder()
+                .room(room1)
+                .user(user)
+                .startTime(LocalDateTime.of(2026, 2, 10, 10, 0))
+                .endTime(LocalDateTime.of(2026, 2, 10, 11, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking2 = Booking.builder().room(room1).user(user)
-                .startTime(LocalDateTime.of(2026, 2,12, 12, 0))
-                .endTime(LocalDateTime.of(2026, 2,12, 13, 0))
+        Booking booking2 = Booking.builder()
+                .room(room1)
+                .user(user)
+                .startTime(LocalDateTime.of(2026, 2, 12, 12, 0))
+                .endTime(LocalDateTime.of(2026, 2, 12, 13, 0))
                 .status(BookingStatus.CANCELLED)
                 .build();
 
         bookingRepository.saveAll(List.of(booking1, booking2));
 
-        LoginRequest loginRequest = LoginRequest.builder().username("john").password("123").build();
+        LoginRequest loginRequest =
+                LoginRequest.builder().username("john").password("123").build();
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,22 +119,15 @@ public class RoomControllerTest extends IntegrationTestBase {
 
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        List<RoomResponse> rooms = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                new TypeReference<>() {}
-        );
-
+        List<RoomResponse> rooms =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(rooms).isNotEmpty();
         assertThat(rooms).hasSize(2);
         assertThat(rooms).allMatch(RoomResponse::isActive);
-        assertThat(rooms)
-                .extracting(RoomResponse::getName)
-                .containsExactlyInAnyOrder("A Room", "C Room");
+        assertThat(rooms).extracting(RoomResponse::getName).containsExactlyInAnyOrder("A Room", "C Room");
 
-        assertThat(rooms)
-                .extracting(RoomResponse::getName)
-                .doesNotContain("B Room");
+        assertThat(rooms).extracting(RoomResponse::getName).doesNotContain("B Room");
     }
 
     @Test
@@ -158,15 +163,11 @@ public class RoomControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        List<RoomResponse> rooms = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                new TypeReference<>() {}
-        );
+        List<RoomResponse> rooms =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(rooms).hasSize(2);
-        assertThat(rooms)
-                .extracting(RoomResponse::getName)
-                .containsExactlyInAnyOrder("A Room", "C Room");
+        assertThat(rooms).extracting(RoomResponse::getName).containsExactlyInAnyOrder("A Room", "C Room");
 
         assertThat(rooms).allMatch(r -> r.getCapacity() >= 10);
 
@@ -183,19 +184,12 @@ public class RoomControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        List<RoomResponse> rooms = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                new TypeReference<>() {}
-        );
+        List<RoomResponse> rooms =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(rooms).hasSize(2);
 
-        assertThat(rooms)
-                .extracting(RoomResponse::getName)
-                .containsExactlyInAnyOrder(
-                        "A Room",
-                        "C Room"
-                );
+        assertThat(rooms).extracting(RoomResponse::getName).containsExactlyInAnyOrder("A Room", "C Room");
 
         assertThat(rooms).allMatch(RoomResponse::isActive);
     }
@@ -209,19 +203,12 @@ public class RoomControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        List<RoomResponse> rooms = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                new TypeReference<>() {}
-        );
+        List<RoomResponse> rooms =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(rooms).hasSize(2);
 
-        assertThat(rooms)
-                .extracting(RoomResponse::getName)
-                .containsExactlyInAnyOrder(
-                        "A Room",
-                        "C Room"
-                );
+        assertThat(rooms).extracting(RoomResponse::getName).containsExactlyInAnyOrder("A Room", "C Room");
     }
 
     @Test
@@ -252,12 +239,13 @@ public class RoomControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
-        assertEquals("ROOM_NOT_FOUND",  errorResponse.getError());
-        assertEquals("Room not found or inactive with id: " + nonExistingId,  errorResponse.getMessage());
-        assertEquals(404,  errorResponse.getStatus());
+        // then
+        assertEquals("ROOM_NOT_FOUND", errorResponse.getError());
+        assertEquals("Room not found or inactive with id: " + nonExistingId, errorResponse.getMessage());
+        assertEquals(404, errorResponse.getStatus());
     }
 
     @Test
@@ -269,12 +257,13 @@ public class RoomControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
-        assertEquals("ROOM_NOT_FOUND",  errorResponse.getError());
-        assertEquals("Room not found or inactive with id: " + INACTIVE_ROOM_ID,  errorResponse.getMessage());
-        assertEquals(404,  errorResponse.getStatus());
+        // then
+        assertEquals("ROOM_NOT_FOUND", errorResponse.getError());
+        assertEquals("Room not found or inactive with id: " + INACTIVE_ROOM_ID, errorResponse.getMessage());
+        assertEquals(404, errorResponse.getStatus());
     }
 
     @Test
@@ -289,10 +278,8 @@ public class RoomControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        RoomAvailabilityResponse response = objectMapper.readValue(
-                mvcResult.getResponse().getContentAsString(),
-                RoomAvailabilityResponse.class
-        );
+        RoomAvailabilityResponse response =
+                objectMapper.readValue(mvcResult.getResponse().getContentAsString(), RoomAvailabilityResponse.class);
 
         assertThat(response).isNotNull();
         assertTrue(response.isAvailableForRequestedTime());
@@ -309,12 +296,13 @@ public class RoomControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
-        assertEquals("ROOM_NOT_FOUND",  errorResponse.getError());
-        assertEquals("Room not found or inactive with id: -999",  errorResponse.getMessage());
-        assertEquals(404,  errorResponse.getStatus());
+        // then
+        assertEquals("ROOM_NOT_FOUND", errorResponse.getError());
+        assertEquals("Room not found or inactive with id: -999", errorResponse.getMessage());
+        assertEquals(404, errorResponse.getStatus());
     }
 
     @Test
@@ -326,11 +314,12 @@ public class RoomControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
-        assertEquals("ROOM_NOT_FOUND",  errorResponse.getError());
-        assertEquals("Room not found or inactive with id: " + INACTIVE_ROOM_ID,  errorResponse.getMessage());
-        assertEquals(404,  errorResponse.getStatus());
+        // then
+        assertEquals("ROOM_NOT_FOUND", errorResponse.getError());
+        assertEquals("Room not found or inactive with id: " + INACTIVE_ROOM_ID, errorResponse.getMessage());
+        assertEquals(404, errorResponse.getStatus());
     }
 }

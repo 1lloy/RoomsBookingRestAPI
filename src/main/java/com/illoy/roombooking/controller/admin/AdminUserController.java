@@ -5,6 +5,9 @@ import com.illoy.roombooking.dto.request.UserStatusUpdateRequest;
 import com.illoy.roombooking.dto.response.UserResponse;
 import com.illoy.roombooking.service.UserService;
 import jakarta.validation.constraints.NotNull;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,10 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/users")
@@ -27,13 +26,13 @@ public class AdminUserController {
 
     private final UserService userService;
 
-    //получить всех пользователей
+    // получить всех пользователей
     @GetMapping("/all")
     public ResponseEntity<List<UserResponse>> findAll() {
         return ResponseEntity.ok(userService.findAll());
     }
 
-    //получить всех активных пользователей (с пагинацией)
+    // получить всех активных пользователей (с пагинацией)
     @GetMapping("/all/active")
     public ResponseEntity<Page<UserResponse>> findAllActive(
             @RequestParam(defaultValue = "0") int page,
@@ -46,7 +45,7 @@ public class AdminUserController {
         return ResponseEntity.ok(activeUsers);
     }
 
-    //получить пользователей определенной роли (с пагинацией)
+    // получить пользователей определенной роли (с пагинацией)
     @GetMapping("/by-role")
     public ResponseEntity<Page<UserResponse>> findByRole(
             @RequestParam @NotNull UserRole role,
@@ -60,28 +59,32 @@ public class AdminUserController {
         return ResponseEntity.ok(users);
     }
 
-    //получить пользователя по email
+    // получить пользователя по email
     @GetMapping("/by-email")
     public ResponseEntity<UserResponse> findByEmail(@RequestBody @NotNull String email) {
 
-        UserResponse user = userService.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        UserResponse user = userService
+                .findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
         return ResponseEntity.ok(user);
     }
 
-    //получить пользователя по username
+    // получить пользователя по username
     @GetMapping("/by-username")
     public ResponseEntity<UserResponse> findByUsername(@RequestBody @NotNull String username) {
 
-        UserResponse user = userService.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        UserResponse user = userService
+                .findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
         return ResponseEntity.ok(user);
     }
 
-    //обновить статус пользователя
+    // обновить статус пользователя
     @PatchMapping("/{userId}/status")
-    public ResponseEntity<Map<String, Object>> updateUserStatus(@PathVariable Long userId,
-                                                                @RequestBody UserStatusUpdateRequest request) {
+    public ResponseEntity<Map<String, Object>> updateUserStatus(
+            @PathVariable Long userId, @RequestBody UserStatusUpdateRequest request) {
 
         boolean isUpdated = userService.updateStatus(userId, request.isActive());
 

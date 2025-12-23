@@ -2,10 +2,9 @@ package com.illoy.roombooking.dto.request;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Value;
-
-import java.time.LocalDateTime;
 
 @Value
 @Builder

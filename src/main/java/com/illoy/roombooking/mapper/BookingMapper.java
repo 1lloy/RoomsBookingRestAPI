@@ -2,12 +2,10 @@ package com.illoy.roombooking.mapper;
 
 import com.illoy.roombooking.database.entity.Booking;
 import com.illoy.roombooking.dto.request.BookingCreateRequest;
-import com.illoy.roombooking.dto.request.BookingStatusUpdateRequest;
 import com.illoy.roombooking.dto.response.BookingResponse;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface BookingMapper {
 
     @Mapping(target = "userId", source = "user.id")

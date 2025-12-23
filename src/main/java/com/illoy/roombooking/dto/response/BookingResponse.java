@@ -1,10 +1,9 @@
 package com.illoy.roombooking.dto.response;
 
 import com.illoy.roombooking.database.entity.BookingStatus;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Value;
-
-import java.time.LocalDateTime;
 
 @Value
 @Builder
@@ -25,5 +24,4 @@ public class BookingResponse {
 
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
-
 }

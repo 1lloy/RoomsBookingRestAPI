@@ -1,6 +1,5 @@
 package com.illoy.roombooking.controller;
 
-import com.illoy.roombooking.database.entity.Booking;
 import com.illoy.roombooking.dto.request.BookingCreateRequest;
 import com.illoy.roombooking.dto.response.BookingResponse;
 import com.illoy.roombooking.security.AuthenticationService;
@@ -18,21 +17,21 @@ public class BookingController {
     private final BookingService bookingService;
     private final AuthenticationService authenticationService;
 
-    //создать бронирование
+    // создать бронирование
     @PostMapping
     public ResponseEntity<BookingResponse> create(@RequestBody @Valid BookingCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.create(request));
     }
 
-    //отменить бронирование
+    // отменить бронирование
     @PatchMapping("/{bookingId}/cancel")
-    public ResponseEntity<BookingResponse> cancel(@PathVariable("bookingId") Long id){
+    public ResponseEntity<BookingResponse> cancel(@PathVariable("bookingId") Long id) {
         return ResponseEntity.ok(bookingService.cancel(id));
     }
 
-    //получить конкретное бронирование
+    // получить конкретное бронирование
     @GetMapping("/{bookingId}")
-    public ResponseEntity<BookingResponse> findById(@PathVariable("bookingId") Long id){
+    public ResponseEntity<BookingResponse> findById(@PathVariable("bookingId") Long id) {
 
         BookingResponse bookingResponse = bookingService.findById(id);
 

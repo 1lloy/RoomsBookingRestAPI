@@ -1,5 +1,10 @@
 package com.illoy.roombooking.integration.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.illoy.roombooking.database.entity.User;
 import com.illoy.roombooking.database.entity.UserRole;
 import com.illoy.roombooking.database.repository.UserRepository;
@@ -11,28 +16,24 @@ import com.illoy.roombooking.exception.UsernameAlreadyExistsException;
 import com.illoy.roombooking.exception.UsernameStatusConflictException;
 import com.illoy.roombooking.integration.IntegrationTestBase;
 import com.illoy.roombooking.service.UserService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-@RequiredArgsConstructor
 public class UserServiceTest extends IntegrationTestBase {
 
-    private final UserService userService;
-    private final UserRepository userRepository;
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private static final String USERNAME = "john";
     private static final String EMAIL = "john@example.com";
@@ -40,10 +41,34 @@ public class UserServiceTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        User user1 = User.builder().username(USERNAME).email(EMAIL).password("123").role(UserRole.ROLE_USER).isActive(true).build();
-        User user2 = User.builder().username("anna").email("anna@gmail.com").password("123").role(UserRole.ROLE_USER).isActive(true).build();
-        User user3 = User.builder().username("oleg").email("oleg@gmail.com").password("123").role(UserRole.ROLE_USER).isActive(false).build();
-        User admin1 = User.builder().username("mark").email("mark@gmail.com").password("123").role(UserRole.ROLE_ADMIN).isActive(true).build();
+        User user1 = User.builder()
+                .username(USERNAME)
+                .email(EMAIL)
+                .password("123")
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user2 = User.builder()
+                .username("anna")
+                .email("anna@gmail.com")
+                .password("123")
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user3 = User.builder()
+                .username("oleg")
+                .email("oleg@gmail.com")
+                .password("123")
+                .role(UserRole.ROLE_USER)
+                .isActive(false)
+                .build();
+        User admin1 = User.builder()
+                .username("mark")
+                .email("mark@gmail.com")
+                .password("123")
+                .role(UserRole.ROLE_ADMIN)
+                .isActive(true)
+                .build();
 
         userRepository.saveAll(List.of(user1, user2, user3, admin1));
 
@@ -69,7 +94,7 @@ public class UserServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void findByRole_shouldReturnPageResponse(){
+    void findByRole_shouldReturnPageResponse() {
         // given
         Pageable pageable = PageRequest.of(0, 10, Sort.by("username").ascending());
 
@@ -82,7 +107,7 @@ public class UserServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void findAllActiveUsers_shouldReturnOnlyActive(){
+    void findAllActiveUsers_shouldReturnOnlyActive() {
         // given
         Pageable pageable = PageRequest.of(0, 10, Sort.by("username").ascending());
 
@@ -97,7 +122,7 @@ public class UserServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void findAll_shouldReturnAllUsers(){
+    void findAll_shouldReturnAllUsers() {
         // when
         List<UserResponse> result = userService.findAll();
 
@@ -105,35 +130,34 @@ public class UserServiceTest extends IntegrationTestBase {
         assertThat(result).hasSize(4);
 
         // проверяем наличие админа в списке
-        assertThat(result)
-                .anySatisfy(u -> {
-                    assertThat(u.getUsername()).isEqualTo("mark");
-                    assertThat(u.getRole()).isEqualTo(UserRole.ROLE_ADMIN);
-                });
+        assertThat(result).anySatisfy(u -> {
+            assertThat(u.getUsername()).isEqualTo("mark");
+            assertThat(u.getRole()).isEqualTo(UserRole.ROLE_ADMIN);
+        });
     }
 
     @Test
-    void findById_shouldReturnUserResponse(){
-        //when
+    void findById_shouldReturnUserResponse() {
+        // when
         Optional<UserResponse> result = userService.findById(ID);
 
-        //then
+        // then
         assertTrue(result.isPresent());
         assertEquals("john", result.get().getUsername());
         assertEquals("john@example.com", result.get().getEmail());
     }
 
     @Test
-    void countActiveUsers_shouldReturnCountOnlyActive(){
-        //when
+    void countActiveUsers_shouldReturnCountOnlyActive() {
+        // when
         Long count = userService.countActiveUsers();
 
-        //then
+        // then
         assertThat(count).isEqualTo(2);
     }
 
     @Test
-    void create_shouldReturnUserResponseSuccessfully(){
+    void create_shouldReturnUserResponseSuccessfully() {
         // given
         RegisterRequest request = RegisterRequest.builder()
                 .username("mike")
@@ -152,7 +176,7 @@ public class UserServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void create_shouldThrowException_whenEmailAlreadyExists(){
+    void create_shouldThrowException_whenEmailAlreadyExists() {
         // given
         RegisterRequest request = RegisterRequest.builder()
                 .username("newUser")
@@ -167,7 +191,7 @@ public class UserServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void create_shouldThrowException_whenUsernameAlreadyExists(){
+    void create_shouldThrowException_whenUsernameAlreadyExists() {
         // given
         RegisterRequest request = RegisterRequest.builder()
                 .username(USERNAME)
@@ -184,7 +208,8 @@ public class UserServiceTest extends IntegrationTestBase {
     @Test
     void update_shouldUpdateEmail() {
         // given
-        UserEditRequest request = UserEditRequest.builder().email("new@example.com").build();
+        UserEditRequest request =
+                UserEditRequest.builder().email("new@example.com").build();
 
         // when
         Optional<UserResponse> result = userService.update(ID, request);
@@ -198,7 +223,8 @@ public class UserServiceTest extends IntegrationTestBase {
     @Test
     void update_shouldUpdatePassword() {
         // given
-        UserEditRequest request = UserEditRequest.builder().password("newPassword").build();
+        UserEditRequest request =
+                UserEditRequest.builder().password("newPassword").build();
 
         // when
         Optional<UserResponse> result = userService.update(ID, request);
@@ -211,7 +237,10 @@ public class UserServiceTest extends IntegrationTestBase {
     @Test
     void update_shouldUpdateEmailAndPasswordTogether() {
         // given
-        UserEditRequest request = UserEditRequest.builder().email("new@example.com").password("newPassword").build();
+        UserEditRequest request = UserEditRequest.builder()
+                .email("new@example.com")
+                .password("newPassword")
+                .build();
 
         // when
         Optional<UserResponse> result = userService.update(ID, request);
@@ -225,7 +254,8 @@ public class UserServiceTest extends IntegrationTestBase {
     @Test
     void update_shouldThrowException_whenUserNotFound() {
         // given
-        UserEditRequest request = UserEditRequest.builder().email("new@example.com").build();
+        UserEditRequest request =
+                UserEditRequest.builder().email("new@example.com").build();
 
         // expect
         assertThatThrownBy(() -> userService.update(-999L, request))
@@ -236,7 +266,8 @@ public class UserServiceTest extends IntegrationTestBase {
     @Test
     void update_shouldThrowException_whenEmailIsBusy() {
         // given
-        UserEditRequest request = UserEditRequest.builder().email("anna@gmail.com").build();
+        UserEditRequest request =
+                UserEditRequest.builder().email("anna@gmail.com").build();
 
         // expect
         assertThatThrownBy(() -> userService.update(ID, request))
@@ -258,18 +289,14 @@ public class UserServiceTest extends IntegrationTestBase {
 
     @Test
     void updateStatus_shouldThrowConflict_whenStatusAlreadySame() {
-        assertThatThrownBy(() ->
-                userService.updateStatus(ID, true)
-        )
+        assertThatThrownBy(() -> userService.updateStatus(ID, true))
                 .isInstanceOf(UsernameStatusConflictException.class)
                 .hasMessageContaining("Username already has this status");
     }
 
     @Test
     void updateStatus_shouldThrowNotFound_whenUserDoesNotExist() {
-        assertThatThrownBy(() ->
-                userService.updateStatus(-999L, true)
-        )
+        assertThatThrownBy(() -> userService.updateStatus(-999L, true))
                 .isInstanceOf(UsernameNotFoundException.class)
                 .hasMessageContaining(String.valueOf(-999L));
     }

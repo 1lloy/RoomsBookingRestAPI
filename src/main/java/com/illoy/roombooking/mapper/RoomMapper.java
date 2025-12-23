@@ -5,8 +5,7 @@ import com.illoy.roombooking.dto.request.RoomCreateEditRequest;
 import com.illoy.roombooking.dto.response.RoomResponse;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface RoomMapper {
 
     RoomResponse toResponse(Room room);

@@ -1,14 +1,13 @@
 package com.illoy.roombooking.database.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -25,7 +24,7 @@ public class Room {
     private String name;
 
     private String description;
-    
+
     private Integer capacity;
 
     @Builder.Default
@@ -37,5 +36,4 @@ public class Room {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
 }

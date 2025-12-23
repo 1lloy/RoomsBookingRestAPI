@@ -1,9 +1,8 @@
 package com.illoy.roombooking.dto.response;
 
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Value;
-
-import java.time.LocalDateTime;
 
 @Builder
 @Value

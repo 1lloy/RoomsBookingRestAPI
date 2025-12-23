@@ -1,5 +1,10 @@
 package com.illoy.roombooking.integration.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import com.illoy.roombooking.database.entity.*;
 import com.illoy.roombooking.database.repository.BookingRepository;
 import com.illoy.roombooking.database.repository.RoomRepository;
@@ -14,7 +19,8 @@ import com.illoy.roombooking.exception.RoomStatusConflictException;
 import com.illoy.roombooking.integration.IntegrationTestBase;
 import com.illoy.roombooking.service.RoomService;
 import jakarta.persistence.EntityManager;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,21 +29,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
-@RequiredArgsConstructor
 public class RoomServiceTest extends IntegrationTestBase {
 
-    private final RoomService roomService;
-    private final RoomRepository roomRepository;
-    private final BookingRepository bookingRepository;
-    private final UserRepository userRepository;
+    @Autowired
+    private RoomService roomService;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -52,48 +56,83 @@ public class RoomServiceTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        user2 = User.builder().username("anna").email("anna@gmail.com").password("123").role(UserRole.ROLE_USER).isActive(true).build();
-        User user3 = User.builder().username("oleg").email("oleg@gmail.com").password("123").role(UserRole.ROLE_USER).isActive(false).build();
+        user2 = User.builder()
+                .username("anna")
+                .email("anna@gmail.com")
+                .password("123")
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user3 = User.builder()
+                .username("oleg")
+                .email("oleg@gmail.com")
+                .password("123")
+                .role(UserRole.ROLE_USER)
+                .isActive(false)
+                .build();
 
         userRepository.saveAll(List.of(user2, user3));
 
-        room1 = Room.builder().name("Conference Room A").capacity(20).isActive(true).build();
-        Room room2 = Room.builder().name("Meeting Room B").capacity(10).isActive(true).build();
-        Room room3 = Room.builder().name("Small Room C").capacity(2).isActive(true).build();
-        Room room4 = Room.builder().name("Training Room D").capacity(15).isActive(false).build();
+        room1 = Room.builder()
+                .name("Conference Room A")
+                .capacity(20)
+                .isActive(true)
+                .build();
+        Room room2 = Room.builder()
+                .name("Meeting Room B")
+                .capacity(10)
+                .isActive(true)
+                .build();
+        Room room3 =
+                Room.builder().name("Small Room C").capacity(2).isActive(true).build();
+        Room room4 = Room.builder()
+                .name("Training Room D")
+                .capacity(15)
+                .isActive(false)
+                .build();
 
         roomRepository.saveAll(List.of(room1, room2, room3, room4));
 
         ACTIVE_ID = room1.getId();
         INACTIVE_ID = room4.getId();
 
-        Booking booking1 = Booking.builder().room(room1).user(user2)
-                .startTime(LocalDateTime.of(2024, 1,20, 9, 0))
-                .endTime(LocalDateTime.of(2024, 1,20, 10, 30))
+        Booking booking1 = Booking.builder()
+                .room(room1)
+                .user(user2)
+                .startTime(LocalDateTime.of(2024, 1, 20, 9, 0))
+                .endTime(LocalDateTime.of(2024, 1, 20, 10, 30))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking2 = Booking.builder().room(room2).user(user3)
-                .startTime(LocalDateTime.of(2024, 1,20, 10, 0))
-                .endTime(LocalDateTime.of(2024, 1,20, 11, 0))
+        Booking booking2 = Booking.builder()
+                .room(room2)
+                .user(user3)
+                .startTime(LocalDateTime.of(2024, 1, 20, 10, 0))
+                .endTime(LocalDateTime.of(2024, 1, 20, 11, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking3 = Booking.builder().room(room1).user(user3)
-                .startTime(LocalDateTime.of(2024, 1,20, 11, 0))
-                .endTime(LocalDateTime.of(2024, 1,20, 12, 30))
+        Booking booking3 = Booking.builder()
+                .room(room1)
+                .user(user3)
+                .startTime(LocalDateTime.of(2024, 1, 20, 11, 0))
+                .endTime(LocalDateTime.of(2024, 1, 20, 12, 30))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking4 = Booking.builder().room(room3).user(user2)
-                .startTime(LocalDateTime.of(2024, 1,20, 14, 0))
-                .endTime(LocalDateTime.of(2024, 1,20, 15, 0))
+        Booking booking4 = Booking.builder()
+                .room(room3)
+                .user(user2)
+                .startTime(LocalDateTime.of(2024, 1, 20, 14, 0))
+                .endTime(LocalDateTime.of(2024, 1, 20, 15, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking5 = Booking.builder().room(room3).user(user2)
-                .startTime(LocalDateTime.of(2024, 1,20, 15, 30))
-                .endTime(LocalDateTime.of(2024, 1,20, 17, 0))
+        Booking booking5 = Booking.builder()
+                .room(room3)
+                .user(user2)
+                .startTime(LocalDateTime.of(2024, 1, 20, 15, 30))
+                .endTime(LocalDateTime.of(2024, 1, 20, 17, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
@@ -101,7 +140,7 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void findAllActive_shouldReturnOnlyActiveList(){
+    void findAllActive_shouldReturnOnlyActiveList() {
         List<RoomResponse> rooms = roomService.findAllActive();
 
         assertThat(rooms).hasSize(3);
@@ -109,7 +148,7 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void findAllActive_shouldReturnOnlyActivePage(){
+    void findAllActive_shouldReturnOnlyActivePage() {
 
         // given
         Pageable pageable = PageRequest.of(0, 10, Sort.by("name").ascending());
@@ -119,26 +158,28 @@ public class RoomServiceTest extends IntegrationTestBase {
 
         // then
         assertEquals(3, result.getTotalElements());
-        assertThat(result).extracting(RoomResponse::getName).containsExactly("Conference Room A", "Meeting Room B", "Small Room C");
+        assertThat(result)
+                .extracting(RoomResponse::getName)
+                .containsExactly("Conference Room A", "Meeting Room B", "Small Room C");
         assertThat(result).noneMatch(userResponse -> !userResponse.isActive());
     }
 
     @Test
-    void findActiveById_shouldReturnOnlyActiveSuccessfully(){
+    void findActiveById_shouldReturnOnlyActiveSuccessfully() {
         RoomResponse response = roomService.findActiveRoomById(ACTIVE_ID);
         assertEquals(ACTIVE_ID, response.getId());
         assertEquals(20, response.getCapacity());
     }
 
     @Test
-    void findActiveById_shouldThrowExceptionWithInactiveRoom(){
+    void findActiveById_shouldThrowExceptionWithInactiveRoom() {
         assertThatThrownBy(() -> roomService.findActiveRoomById(INACTIVE_ID))
                 .isInstanceOf(RoomNotFoundException.class)
                 .hasMessageContaining(String.valueOf(INACTIVE_ID));
     }
 
     @Test
-    void findActiveByMinCapacity_shouldReturnActiveWithGreaterCapacity(){
+    void findActiveByMinCapacity_shouldReturnActiveWithGreaterCapacity() {
         List<RoomResponse> rooms = roomService.findActiveByCapacity(10);
 
         assertThat(rooms).hasSize(2);
@@ -147,14 +188,14 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void countActive_shouldReturnCountActive(){
+    void countActive_shouldReturnCountActive() {
         Long count = roomService.countActiveRooms();
 
         assertThat(count).isEqualTo(3);
     }
 
     @Test
-    void searchByName_shouldReturnActiveByNameTerm(){
+    void searchByName_shouldReturnActiveByNameTerm() {
         List<RoomResponse> rooms = roomService.searchActiveByName("oom");
 
         assertThat(rooms).hasSize(3);
@@ -162,7 +203,7 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void checkAvailability_shouldReturnRoomSheduleSuccessfully(){
+    void checkAvailability_shouldReturnRoomSheduleSuccessfully() {
         RoomAvailabilityResponse response = roomService.checkAvailability(ACTIVE_ID, START, END);
 
         // then
@@ -172,7 +213,7 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void checkAvailability_shouldReturnRoomSheduleFailure(){
+    void checkAvailability_shouldReturnRoomSheduleFailure() {
         LocalDateTime START_FAILED = LocalDateTime.of(2024, 1, 20, 9, 30);
         LocalDateTime END_FAILED = LocalDateTime.of(2024, 1, 20, 11, 0);
 
@@ -185,11 +226,14 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void create_shouldReturnRoomResponseSuccessfully(){
+    void create_shouldReturnRoomResponseSuccessfully() {
         // given
-        RoomCreateEditRequest request = RoomCreateEditRequest.builder().name("Meeting Room B-1").capacity(20).build();
+        RoomCreateEditRequest request = RoomCreateEditRequest.builder()
+                .name("Meeting Room B-1")
+                .capacity(20)
+                .build();
 
-        //when
+        // when
         RoomResponse roomResponse = roomService.create(request);
 
         // then
@@ -199,9 +243,12 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void create_shouldReturnRoomResponseFailure(){
+    void create_shouldReturnRoomResponseFailure() {
         // given
-        RoomCreateEditRequest request = RoomCreateEditRequest.builder().name("Meeting Room B").capacity(10).build();
+        RoomCreateEditRequest request = RoomCreateEditRequest.builder()
+                .name("Meeting Room B")
+                .capacity(10)
+                .build();
 
         // expect
         assertThatThrownBy(() -> roomService.create(request))
@@ -210,11 +257,15 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void update_shouldReturnRoomResponseSuccessfully(){
+    void update_shouldReturnRoomResponseSuccessfully() {
         // given
-        RoomCreateEditRequest request = RoomCreateEditRequest.builder().name("Conference Room A").description("Super Room").capacity(25).build();
+        RoomCreateEditRequest request = RoomCreateEditRequest.builder()
+                .name("Conference Room A")
+                .description("Super Room")
+                .capacity(25)
+                .build();
 
-        //when
+        // when
         RoomResponse roomResponse = roomService.update(ACTIVE_ID, request);
 
         // then
@@ -224,9 +275,12 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void update_shouldReturnRoomResponseNotFound(){
+    void update_shouldReturnRoomResponseNotFound() {
         // given
-        RoomCreateEditRequest request = RoomCreateEditRequest.builder().name("Conference Room Z").capacity(40).build();
+        RoomCreateEditRequest request = RoomCreateEditRequest.builder()
+                .name("Conference Room Z")
+                .capacity(40)
+                .build();
 
         // then
         assertThatThrownBy(() -> roomService.update(-999L, request))
@@ -235,9 +289,10 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void update_shouldReturnRoomResponseAlreadyExists(){
+    void update_shouldReturnRoomResponseAlreadyExists() {
         // given
-        RoomCreateEditRequest request = RoomCreateEditRequest.builder().name("Meeting Room B").build();
+        RoomCreateEditRequest request =
+                RoomCreateEditRequest.builder().name("Meeting Room B").build();
 
         // then
         assertThatThrownBy(() -> roomService.update(ACTIVE_ID, request))
@@ -246,7 +301,7 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void updateStatus_shouldUpdateStatusSuccessfully(){
+    void updateStatus_shouldUpdateStatusSuccessfully() {
         // when
         roomService.updateRoomStatus(ACTIVE_ID, false);
 
@@ -261,7 +316,7 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void updateStatus_shouldUpdateStatusNotFound(){
+    void updateStatus_shouldUpdateStatusNotFound() {
         // then
         assertThatThrownBy(() -> roomService.updateRoomStatus(-999L, false))
                 .isInstanceOf(RoomNotFoundException.class)
@@ -269,7 +324,7 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void updateStatus_shouldUpdateStatusSameStatus(){
+    void updateStatus_shouldUpdateStatusSameStatus() {
         // then
         assertThatThrownBy(() -> roomService.updateRoomStatus(ACTIVE_ID, true))
                 .isInstanceOf(RoomStatusConflictException.class)
@@ -277,11 +332,13 @@ public class RoomServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void updateStatus_shouldUpdateStatusHasBookings(){
-        //given
-        Booking booking6 = Booking.builder().room(room1).user(user2)
-                .startTime(LocalDateTime.of(2030, 12,2, 11, 30))
-                .endTime(LocalDateTime.of(2030, 12,2, 12, 0))
+    void updateStatus_shouldUpdateStatusHasBookings() {
+        // given
+        Booking booking6 = Booking.builder()
+                .room(room1)
+                .user(user2)
+                .startTime(LocalDateTime.of(2030, 12, 2, 11, 30))
+                .endTime(LocalDateTime.of(2030, 12, 2, 12, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 

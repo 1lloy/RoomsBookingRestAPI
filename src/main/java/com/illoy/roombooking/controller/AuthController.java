@@ -3,7 +3,6 @@ package com.illoy.roombooking.controller;
 import com.illoy.roombooking.database.entity.UserRole;
 import com.illoy.roombooking.dto.request.LoginRequest;
 import com.illoy.roombooking.dto.request.RegisterRequest;
-import com.illoy.roombooking.exception.ErrorResponse;
 import com.illoy.roombooking.dto.response.JwtResponse;
 import com.illoy.roombooking.dto.response.RegisterResponse;
 import com.illoy.roombooking.dto.response.UserResponse;
@@ -35,8 +34,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -47,16 +45,12 @@ public class AuthController {
         return ResponseEntity.ok(JwtResponse.builder()
                 .token(jwt)
                 .username(userDetails.getUsername())
-                .role
-                        (
-                                userDetails.getAuthorities().stream()
-                                        .findFirst()
-                                        .map(GrantedAuthority::getAuthority)
-                                        .map(UserRole::valueOf)
-                                        .orElse(UserRole.ROLE_USER)
-                        )
-                .build()
-        );
+                .role(userDetails.getAuthorities().stream()
+                        .findFirst()
+                        .map(GrantedAuthority::getAuthority)
+                        .map(UserRole::valueOf)
+                        .orElse(UserRole.ROLE_USER))
+                .build());
     }
 
     @PostMapping("/register")
@@ -71,9 +65,6 @@ public class AuthController {
         String jwt = jwtUtils.generateJwtToken(authentication);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(RegisterResponse.builder()
-                        .token(jwt)
-                        .user(userResponse)
-                        .build());
+                .body(RegisterResponse.builder().token(jwt).user(userResponse).build());
     }
 }

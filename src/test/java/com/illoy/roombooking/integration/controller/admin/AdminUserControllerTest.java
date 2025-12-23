@@ -1,5 +1,12 @@
 package com.illoy.roombooking.integration.controller.admin;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.illoy.roombooking.database.entity.*;
@@ -13,36 +20,36 @@ import com.illoy.roombooking.dto.response.UserResponse;
 import com.illoy.roombooking.exception.ErrorResponse;
 import com.illoy.roombooking.integration.IntegrationTestBase;
 import com.jayway.jsonpath.JsonPath;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@RequiredArgsConstructor
-@AutoConfigureMockMvc
 public class AdminUserControllerTest extends IntegrationTestBase {
 
-    private final MockMvc mockMvc;
-    private final UserRepository userRepository;
-    private final BookingRepository bookingRepository;
-    private final RoomRepository roomRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private String jwtToken;
 
@@ -50,46 +57,93 @@ public class AdminUserControllerTest extends IntegrationTestBase {
 
     @BeforeEach
     void setup() throws Exception {
-        User user2 = User.builder().username("anna").email("anna@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(true).build();
-        User user3 = User.builder().username("oleg").email("oleg@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(true).build();
-        User user4 = User.builder().username("nikol").email("kolya@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(false).build();
-        User admin = User.builder().username("admin1").email("mark@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_ADMIN).isActive(true).build();
+        User user2 = User.builder()
+                .username("anna")
+                .email("anna@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user3 = User.builder()
+                .username("oleg")
+                .email("oleg@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user4 = User.builder()
+                .username("nikol")
+                .email("kolya@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(false)
+                .build();
+        User admin = User.builder()
+                .username("admin1")
+                .email("mark@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_ADMIN)
+                .isActive(true)
+                .build();
 
         userRepository.saveAll(List.of(user2, user3, user4, admin));
         USER_ID = user4.getId();
 
-        Room room1 = Room.builder().name("Conference Room A").capacity(20).isActive(true).build();
-        Room room2 = Room.builder().name("Meeting Room B").capacity(10).isActive(true).build();
-        Room room3 = Room.builder().name("Small Room C").capacity(2).isActive(true).build();
-        Room room4 = Room.builder().name("Training Room D").capacity(15).isActive(false).build();
+        Room room1 = Room.builder()
+                .name("Conference Room A")
+                .capacity(20)
+                .isActive(true)
+                .build();
+        Room room2 = Room.builder()
+                .name("Meeting Room B")
+                .capacity(10)
+                .isActive(true)
+                .build();
+        Room room3 =
+                Room.builder().name("Small Room C").capacity(2).isActive(true).build();
+        Room room4 = Room.builder()
+                .name("Training Room D")
+                .capacity(15)
+                .isActive(false)
+                .build();
 
         roomRepository.saveAll(List.of(room1, room2, room3, room4));
 
-        Booking booking1 = Booking.builder().room(room1).user(user2)
+        Booking booking1 = Booking.builder()
+                .room(room1)
+                .user(user2)
                 .startTime(LocalDateTime.of(2025, 1, 20, 9, 0))
                 .endTime(LocalDateTime.of(2025, 1, 20, 10, 30))
                 .status(BookingStatus.COMPLETED)
                 .build();
 
-        Booking booking2 = Booking.builder().room(room2).user(user3)
+        Booking booking2 = Booking.builder()
+                .room(room2)
+                .user(user3)
                 .startTime(LocalDateTime.of(2026, 1, 20, 10, 0))
                 .endTime(LocalDateTime.of(2026, 1, 20, 11, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking3 = Booking.builder().room(room1).user(user3)
+        Booking booking3 = Booking.builder()
+                .room(room1)
+                .user(user3)
                 .startTime(LocalDateTime.of(2026, 1, 20, 11, 0))
                 .endTime(LocalDateTime.of(2026, 1, 20, 12, 30))
                 .status(BookingStatus.CANCELLED)
                 .build();
 
-        Booking booking4 = Booking.builder().room(room3).user(user2)
+        Booking booking4 = Booking.builder()
+                .room(room3)
+                .user(user2)
                 .startTime(LocalDateTime.of(2026, 1, 20, 14, 0))
                 .endTime(LocalDateTime.of(2026, 1, 20, 15, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking5 = Booking.builder().room(room3).user(user2)
+        Booking booking5 = Booking.builder()
+                .room(room3)
+                .user(user2)
                 .startTime(LocalDateTime.of(2026, 1, 22, 15, 30))
                 .endTime(LocalDateTime.of(2026, 1, 22, 17, 0))
                 .status(BookingStatus.CONFIRMED)
@@ -97,7 +151,8 @@ public class AdminUserControllerTest extends IntegrationTestBase {
 
         bookingRepository.saveAll(List.of(booking1, booking2, booking3, booking4, booking5));
 
-        LoginRequest loginRequest = LoginRequest.builder().username("admin1").password("123").build();
+        LoginRequest loginRequest =
+                LoginRequest.builder().username("admin1").password("123").build();
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -117,8 +172,8 @@ public class AdminUserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        List<UserResponse> users = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
-        });
+        List<UserResponse> users =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(users).hasSize(4);
         assertThat(users).anyMatch(user -> user.getRole() == UserRole.ROLE_ADMIN);
@@ -184,7 +239,8 @@ public class AdminUserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        UserResponse userResponse = objectMapper.readValue(result.getResponse().getContentAsString(), UserResponse.class);
+        UserResponse userResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), UserResponse.class);
 
         assertThat(userResponse).isNotNull();
         assertThat(userResponse.getRole()).isEqualTo(UserRole.ROLE_USER);
@@ -201,9 +257,10 @@ public class AdminUserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
+        // then
         assertEquals("USER_NOT_FOUND", errorResponse.getError());
         assertEquals("User not found with email: notExistingEmail@gmail.com", errorResponse.getMessage());
         assertEquals(404, errorResponse.getStatus());
@@ -220,7 +277,8 @@ public class AdminUserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        UserResponse userResponse = objectMapper.readValue(result.getResponse().getContentAsString(), UserResponse.class);
+        UserResponse userResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), UserResponse.class);
 
         assertThat(userResponse).isNotNull();
         assertThat(userResponse.getRole()).isEqualTo(UserRole.ROLE_ADMIN);
@@ -238,9 +296,10 @@ public class AdminUserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
+        // then
         assertEquals("USER_NOT_FOUND", errorResponse.getError());
         assertEquals("User not found with username: notExistingUsername", errorResponse.getMessage());
         assertEquals(404, errorResponse.getStatus());
@@ -249,7 +308,8 @@ public class AdminUserControllerTest extends IntegrationTestBase {
 
     @Test
     void updateUserStatus_shouldReturnMapSuccess() throws Exception {
-        UserStatusUpdateRequest request = UserStatusUpdateRequest.builder().active(true).build();
+        UserStatusUpdateRequest request =
+                UserStatusUpdateRequest.builder().active(true).build();
 
         MvcResult result = mockMvc.perform(patch("/api/admin/users/{userId}/status", USER_ID)
                         .header("Authorization", "Bearer " + jwtToken)
@@ -260,8 +320,7 @@ public class AdminUserControllerTest extends IntegrationTestBase {
 
         // Получаем мапу из ответа
         String content = result.getResponse().getContentAsString();
-        Map<String, Object> responseMap = objectMapper.readValue(content,
-                new TypeReference<>() {});
+        Map<String, Object> responseMap = objectMapper.readValue(content, new TypeReference<>() {});
 
         assertThat(responseMap.get("success")).isEqualTo(true);
         assertEquals(responseMap.get("userId"), USER_ID.intValue());
@@ -270,7 +329,8 @@ public class AdminUserControllerTest extends IntegrationTestBase {
 
     @Test
     void updateUserStatus_shouldReturnUsernameStatusConflictException() throws Exception {
-        UserStatusUpdateRequest request = UserStatusUpdateRequest.builder().active(false).build();
+        UserStatusUpdateRequest request =
+                UserStatusUpdateRequest.builder().active(false).build();
 
         MvcResult result = mockMvc.perform(patch("/api/admin/users/{userId}/status", USER_ID)
                         .header("Authorization", "Bearer " + jwtToken)
@@ -280,9 +340,10 @@ public class AdminUserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
+        // then
         assertEquals("USER_STATUS_CONFLICT", errorResponse.getError());
         assertEquals("Username already has this status", errorResponse.getMessage());
         assertEquals(400, errorResponse.getStatus());
@@ -291,7 +352,8 @@ public class AdminUserControllerTest extends IntegrationTestBase {
 
     @Test
     void updateUserStatus_shouldReturnUsernameNotFoundException() throws Exception {
-        UserStatusUpdateRequest request = UserStatusUpdateRequest.builder().active(false).build();
+        UserStatusUpdateRequest request =
+                UserStatusUpdateRequest.builder().active(false).build();
 
         MvcResult result = mockMvc.perform(patch("/api/admin/users/{userId}/status", -999L)
                         .header("Authorization", "Bearer " + jwtToken)
@@ -300,9 +362,10 @@ public class AdminUserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
+        // then
         assertEquals("USER_NOT_FOUND", errorResponse.getError());
         assertEquals("Failed to retrieve user with id: -999", errorResponse.getMessage());
         assertEquals(404, errorResponse.getStatus());

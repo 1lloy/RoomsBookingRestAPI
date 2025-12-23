@@ -1,5 +1,10 @@
 package com.illoy.roombooking.integration.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.illoy.roombooking.database.entity.*;
 import com.illoy.roombooking.database.repository.BookingRepository;
@@ -7,37 +12,39 @@ import com.illoy.roombooking.database.repository.RoomRepository;
 import com.illoy.roombooking.database.repository.UserRepository;
 import com.illoy.roombooking.dto.request.BookingCreateRequest;
 import com.illoy.roombooking.dto.request.LoginRequest;
-import com.illoy.roombooking.dto.response.JwtResponse;
 import com.illoy.roombooking.dto.response.BookingResponse;
+import com.illoy.roombooking.dto.response.JwtResponse;
 import com.illoy.roombooking.exception.ErrorResponse;
 import com.illoy.roombooking.integration.IntegrationTestBase;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@RequiredArgsConstructor
-@AutoConfigureMockMvc
 public class BookingControllerTest extends IntegrationTestBase {
 
-    private final MockMvc mockMvc;
-    private final UserRepository userRepository;
-    private final BookingRepository bookingRepository;
-    private final RoomRepository roomRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private String jwtToken;
     private Long ACTIVE_ROOM_ID;
@@ -50,16 +57,47 @@ public class BookingControllerTest extends IntegrationTestBase {
 
     @BeforeEach
     void setup() throws Exception {
-        User user2 = User.builder().username("anna").email("anna@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(true).build();
-        User user3 = User.builder().username("oleg").email("oleg@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_USER).isActive(true).build();
-        User admin = User.builder().username("admin1").email("mark@gmail.com").password(passwordEncoder.encode("123")).role(UserRole.ROLE_ADMIN).isActive(true).build();
+        User user2 = User.builder()
+                .username("anna")
+                .email("anna@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User user3 = User.builder()
+                .username("oleg")
+                .email("oleg@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_USER)
+                .isActive(true)
+                .build();
+        User admin = User.builder()
+                .username("admin1")
+                .email("mark@gmail.com")
+                .password(passwordEncoder.encode("123"))
+                .role(UserRole.ROLE_ADMIN)
+                .isActive(true)
+                .build();
 
         userRepository.saveAll(List.of(user2, user3, admin));
 
-        Room room1 = Room.builder().name("Conference Room A").capacity(20).isActive(true).build();
-        Room room2 = Room.builder().name("Meeting Room B").capacity(10).isActive(true).build();
-        Room room3 = Room.builder().name("Small Room C").capacity(2).isActive(true).build();
-        Room room4 = Room.builder().name("Training Room D").capacity(15).isActive(false).build();
+        Room room1 = Room.builder()
+                .name("Conference Room A")
+                .capacity(20)
+                .isActive(true)
+                .build();
+        Room room2 = Room.builder()
+                .name("Meeting Room B")
+                .capacity(10)
+                .isActive(true)
+                .build();
+        Room room3 =
+                Room.builder().name("Small Room C").capacity(2).isActive(true).build();
+        Room room4 = Room.builder()
+                .name("Training Room D")
+                .capacity(15)
+                .isActive(false)
+                .build();
 
         roomRepository.saveAll(List.of(room1, room2, room3, room4));
 
@@ -69,33 +107,43 @@ public class BookingControllerTest extends IntegrationTestBase {
         CANCELLING_ROOM = room3;
         CANCELLING_USER = user2;
 
-        Booking booking1 = Booking.builder().room(room1).user(user2)
-                .startTime(LocalDateTime.of(2025, 1,20, 9, 0))
-                .endTime(LocalDateTime.of(2025, 1,20, 10, 30))
+        Booking booking1 = Booking.builder()
+                .room(room1)
+                .user(user2)
+                .startTime(LocalDateTime.of(2025, 1, 20, 9, 0))
+                .endTime(LocalDateTime.of(2025, 1, 20, 10, 30))
                 .status(BookingStatus.COMPLETED)
                 .build();
 
-        Booking booking2 = Booking.builder().room(room2).user(user3)
-                .startTime(LocalDateTime.of(2026, 1,20, 10, 0))
-                .endTime(LocalDateTime.of(2026, 1,20, 11, 0))
+        Booking booking2 = Booking.builder()
+                .room(room2)
+                .user(user3)
+                .startTime(LocalDateTime.of(2026, 1, 20, 10, 0))
+                .endTime(LocalDateTime.of(2026, 1, 20, 11, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking3 = Booking.builder().room(room1).user(user3)
-                .startTime(LocalDateTime.of(2026, 1,20, 11, 0))
-                .endTime(LocalDateTime.of(2026, 1,20, 12, 30))
+        Booking booking3 = Booking.builder()
+                .room(room1)
+                .user(user3)
+                .startTime(LocalDateTime.of(2026, 1, 20, 11, 0))
+                .endTime(LocalDateTime.of(2026, 1, 20, 12, 30))
                 .status(BookingStatus.CANCELLED)
                 .build();
 
-        Booking booking4 = Booking.builder().room(room3).user(user2)
-                .startTime(LocalDateTime.of(2026, 1,20, 14, 0))
-                .endTime(LocalDateTime.of(2026, 1,20, 15, 0))
+        Booking booking4 = Booking.builder()
+                .room(room3)
+                .user(user2)
+                .startTime(LocalDateTime.of(2026, 1, 20, 14, 0))
+                .endTime(LocalDateTime.of(2026, 1, 20, 15, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking5 = Booking.builder().room(room3).user(user2)
-                .startTime(LocalDateTime.of(2026, 1,22, 15, 30))
-                .endTime(LocalDateTime.of(2026, 1,22, 17, 0))
+        Booking booking5 = Booking.builder()
+                .room(room3)
+                .user(user2)
+                .startTime(LocalDateTime.of(2026, 1, 22, 15, 30))
+                .endTime(LocalDateTime.of(2026, 1, 22, 17, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
@@ -105,7 +153,8 @@ public class BookingControllerTest extends IntegrationTestBase {
 
         NORMAL_BOOKING_ID = booking4.getId();
 
-        LoginRequest loginRequest = LoginRequest.builder().username("anna").password("123").build();
+        LoginRequest loginRequest =
+                LoginRequest.builder().username("anna").password("123").build();
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,10 +181,8 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        BookingResponse bookingResponse = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                BookingResponse.class
-        );
+        BookingResponse bookingResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), BookingResponse.class);
 
         assertThat(bookingResponse).isNotNull();
         assertThat(bookingResponse.getId()).isNotNull();
@@ -162,11 +209,12 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertEquals("ROOM_NOT_FOUND",  errorResponse.getError());
-        assertEquals("Room not found or inactive with id: " + invalidRoomId,  errorResponse.getMessage());
-        assertEquals(404,  errorResponse.getStatus());
+        assertEquals("ROOM_NOT_FOUND", errorResponse.getError());
+        assertEquals("Room not found or inactive with id: " + invalidRoomId, errorResponse.getMessage());
+        assertEquals(404, errorResponse.getStatus());
     }
 
     @Test
@@ -184,11 +232,12 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertEquals("ROOM_NOT_FOUND",  errorResponse.getError());
-        assertEquals("Room not found or inactive with id: " + INACTIVE_ROOM_ID,  errorResponse.getMessage());
-        assertEquals(404,  errorResponse.getStatus());
+        assertEquals("ROOM_NOT_FOUND", errorResponse.getError());
+        assertEquals("Room not found or inactive with id: " + INACTIVE_ROOM_ID, errorResponse.getMessage());
+        assertEquals(404, errorResponse.getStatus());
     }
 
     @Test
@@ -206,11 +255,12 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertEquals("ROOM_NOT_AVAILABLE_FOR_THIS_TIME",  errorResponse.getError());
+        assertEquals("ROOM_NOT_AVAILABLE_FOR_THIS_TIME", errorResponse.getError());
         assertEquals("Room is not available for selected time", errorResponse.getMessage());
-        assertEquals(400,  errorResponse.getStatus());
+        assertEquals(400, errorResponse.getStatus());
     }
 
     @Test
@@ -228,11 +278,12 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertEquals("BOOKING_TIME_CONFLICT",  errorResponse.getError());
+        assertEquals("BOOKING_TIME_CONFLICT", errorResponse.getError());
         assertEquals("End time must be after start time", errorResponse.getMessage());
-        assertEquals(400,  errorResponse.getStatus());
+        assertEquals(400, errorResponse.getStatus());
     }
 
     @Test
@@ -251,9 +302,11 @@ public class BookingControllerTest extends IntegrationTestBase {
 
     @Test
     void cancel_shouldCancelBookingAndReturnBookingResponseSuccess() throws Exception {
-        Booking booking6 = Booking.builder().room(CANCELLING_ROOM).user(CANCELLING_USER)
-                .startTime(LocalDateTime.of(2026, 1,22, 17, 30))
-                .endTime(LocalDateTime.of(2026, 1,22, 18, 0))
+        Booking booking6 = Booking.builder()
+                .room(CANCELLING_ROOM)
+                .user(CANCELLING_USER)
+                .startTime(LocalDateTime.of(2026, 1, 22, 17, 30))
+                .endTime(LocalDateTime.of(2026, 1, 22, 18, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
@@ -265,10 +318,8 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        BookingResponse bookingResponse = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                BookingResponse.class
-        );
+        BookingResponse bookingResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), BookingResponse.class);
 
         assertThat(bookingResponse).isNotNull();
         assertThat(bookingResponse.getId()).isEqualTo(savedBooking.getId());
@@ -285,11 +336,12 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertEquals("BOOKING_NOT_FOUND",  errorResponse.getError());
+        assertEquals("BOOKING_NOT_FOUND", errorResponse.getError());
         assertEquals("Booking not found", errorResponse.getMessage());
-        assertEquals(404,  errorResponse.getStatus());
+        assertEquals(404, errorResponse.getStatus());
     }
 
     @Test
@@ -300,18 +352,21 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isForbidden())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertEquals("ACCESS_DENIED",  errorResponse.getError());
+        assertEquals("ACCESS_DENIED", errorResponse.getError());
         assertEquals("You can only cancel your own bookings", errorResponse.getMessage());
-        assertEquals(403,  errorResponse.getStatus());
+        assertEquals(403, errorResponse.getStatus());
     }
 
     @Test
     void cancel_withNonExistingBooking_shouldReturnBookingStatusConflict() throws Exception {
-        Booking booking6 = Booking.builder().room(CANCELLING_ROOM).user(CANCELLING_USER)
-                .startTime(LocalDateTime.of(2026, 1,22, 17, 30))
-                .endTime(LocalDateTime.of(2026, 1,22, 18, 0))
+        Booking booking6 = Booking.builder()
+                .room(CANCELLING_ROOM)
+                .user(CANCELLING_USER)
+                .startTime(LocalDateTime.of(2026, 1, 22, 17, 30))
+                .endTime(LocalDateTime.of(2026, 1, 22, 18, 0))
                 .status(BookingStatus.CANCELLED)
                 .build();
 
@@ -323,11 +378,12 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertEquals("BOOKING_STATUS_CONFLICT",  errorResponse.getError());
+        assertEquals("BOOKING_STATUS_CONFLICT", errorResponse.getError());
         assertEquals("Booking already cancelled", errorResponse.getMessage());
-        assertEquals(400,  errorResponse.getStatus());
+        assertEquals(400, errorResponse.getStatus());
     }
 
     @Test
@@ -338,16 +394,14 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        BookingResponse bookingResponse = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                BookingResponse.class
-        );
+        BookingResponse bookingResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), BookingResponse.class);
 
         assertThat(bookingResponse).isNotNull();
         assertThat(bookingResponse.getId()).isEqualTo(NORMAL_BOOKING_ID);
         assertThat(bookingResponse.getRoomId()).isEqualTo(CANCELLING_ROOM.getId());
-        assertThat(bookingResponse.getStartTime()).isEqualTo(LocalDateTime.of(2026, 1,20, 14, 0));
-        assertThat(bookingResponse.getEndTime()).isEqualTo(LocalDateTime.of(2026, 1,20, 15, 0));
+        assertThat(bookingResponse.getStartTime()).isEqualTo(LocalDateTime.of(2026, 1, 20, 14, 0));
+        assertThat(bookingResponse.getEndTime()).isEqualTo(LocalDateTime.of(2026, 1, 20, 15, 0));
         assertThat(bookingResponse.getStatus()).isEqualTo(BookingStatus.CONFIRMED);
     }
 
@@ -359,17 +413,19 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertEquals("BOOKING_NOT_FOUND",  errorResponse.getError());
+        assertEquals("BOOKING_NOT_FOUND", errorResponse.getError());
         assertEquals("Booking not found", errorResponse.getMessage());
-        assertEquals(404,  errorResponse.getStatus());
+        assertEquals(404, errorResponse.getStatus());
     }
 
     @Test
     void findById_shouldReturnBookingResponseSuccessForAdmin() throws Exception {
 
-        LoginRequest loginRequest = LoginRequest.builder().username("admin1").password("123").build();
+        LoginRequest loginRequest =
+                LoginRequest.builder().username("admin1").password("123").build();
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -377,7 +433,8 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        JwtResponse jwtResponse = objectMapper.readValue(loginResult.getResponse().getContentAsString(), JwtResponse.class);
+        JwtResponse jwtResponse =
+                objectMapper.readValue(loginResult.getResponse().getContentAsString(), JwtResponse.class);
         jwtToken = jwtResponse.getToken();
 
         // запрос от админа
@@ -387,16 +444,14 @@ public class BookingControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        BookingResponse bookingResponse = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                BookingResponse.class
-        );
+        BookingResponse bookingResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), BookingResponse.class);
 
         assertThat(bookingResponse).isNotNull();
         assertThat(bookingResponse.getId()).isEqualTo(NORMAL_BOOKING_ID);
         assertThat(bookingResponse.getRoomId()).isEqualTo(CANCELLING_ROOM.getId());
-        assertThat(bookingResponse.getStartTime()).isEqualTo(LocalDateTime.of(2026, 1,20, 14, 0));
-        assertThat(bookingResponse.getEndTime()).isEqualTo(LocalDateTime.of(2026, 1,20, 15, 0));
+        assertThat(bookingResponse.getStartTime()).isEqualTo(LocalDateTime.of(2026, 1, 20, 14, 0));
+        assertThat(bookingResponse.getEndTime()).isEqualTo(LocalDateTime.of(2026, 1, 20, 15, 0));
         assertThat(bookingResponse.getStatus()).isEqualTo(BookingStatus.CONFIRMED);
     }
 }

@@ -3,6 +3,8 @@ package com.illoy.roombooking.controller;
 import com.illoy.roombooking.dto.response.RoomAvailabilityResponse;
 import com.illoy.roombooking.dto.response.RoomResponse;
 import com.illoy.roombooking.service.RoomService;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,22 +14,19 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/rooms")
 @RequiredArgsConstructor
 public class RoomController {
     private final RoomService roomService;
 
-    //получить все активные комнаты
+    // получить все активные комнаты
     @GetMapping
     public ResponseEntity<List<RoomResponse>> findAllActiveList() {
         return ResponseEntity.ok(roomService.findAllActive());
     }
 
-    //получить все активные комнаты (с пагинацией)
+    // получить все активные комнаты (с пагинацией)
     @GetMapping("/page")
     public ResponseEntity<Page<RoomResponse>> findAllActivePage(
             @RequestParam(defaultValue = "0") int page,
@@ -40,29 +39,31 @@ public class RoomController {
         return ResponseEntity.ok(activeRooms);
     }
 
-    //получить все комнаты с минимальной вместимостью
+    // получить все комнаты с минимальной вместимостью
     @GetMapping("/available")
     public ResponseEntity<List<RoomResponse>> findActiveByCapacity(@RequestParam(defaultValue = "2") int minCapacity) {
         return ResponseEntity.ok(roomService.findActiveByCapacity(minCapacity));
     }
 
-    //получить все комнаты по подстроке названия
+    // получить все комнаты по подстроке названия
     @GetMapping("/search")
-    public ResponseEntity<List<RoomResponse>> findActiveBySearchTerm(@RequestParam(defaultValue = "") String searchTerm) {
+    public ResponseEntity<List<RoomResponse>> findActiveBySearchTerm(
+            @RequestParam(defaultValue = "") String searchTerm) {
         return ResponseEntity.ok(roomService.searchActiveByName(searchTerm));
     }
 
-    //получить комнату по id
+    // получить комнату по id
     @GetMapping("/{roomId}")
     public ResponseEntity<RoomResponse> findActiveById(@PathVariable("roomId") Long id) {
         return ResponseEntity.ok(roomService.findActiveRoomById(id));
     }
 
-    //проверить доступность бронирования комнаты в определенное время
+    // проверить доступность бронирования комнаты в определенное время
     @GetMapping("/{roomId}/availability")
-    public ResponseEntity<RoomAvailabilityResponse> checkAvailability(@PathVariable("roomId") Long id,
-                                                                      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-                                                                      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+    public ResponseEntity<RoomAvailabilityResponse> checkAvailability(
+            @PathVariable("roomId") Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
 
         return ResponseEntity.ok(roomService.checkAvailability(id, startTime, endTime));
     }

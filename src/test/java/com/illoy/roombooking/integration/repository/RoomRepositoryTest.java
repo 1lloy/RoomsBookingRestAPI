@@ -1,32 +1,38 @@
 package com.illoy.roombooking.integration.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.illoy.roombooking.database.entity.Room;
 import com.illoy.roombooking.database.repository.RoomRepository;
 import com.illoy.roombooking.integration.IntegrationTestBase;
 import jakarta.persistence.EntityManager;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 @RequiredArgsConstructor
 public class RoomRepositoryTest extends IntegrationTestBase {
 
-    private final RoomRepository roomRepository;
+    @Autowired
+    private RoomRepository roomRepository;
 
     @Autowired
     private EntityManager entityManager;
 
     @Test
-    void shouldFindOnlyActiveRooms(){
+    void shouldFindOnlyActiveRooms() {
         // given: создаём несколько комнат
-        Room activeRoom1 = Room.builder().name("Conference A").isActive(true).build();
-        Room activeRoom2 = Room.builder().name("Conference B").isActive(true).build();
-        Room inactiveRoom = Room.builder().name("Maintenance Room").isActive(false).build();
+        Room activeRoom1 =
+                Room.builder().name("Conference A").capacity(2).isActive(true).build();
+        Room activeRoom2 =
+                Room.builder().name("Conference B").capacity(2).isActive(true).build();
+        Room inactiveRoom = Room.builder()
+                .name("Maintenance Room")
+                .capacity(2)
+                .isActive(false)
+                .build();
 
         roomRepository.saveAll(List.of(activeRoom1, activeRoom2, inactiveRoom));
 
@@ -46,7 +52,8 @@ public class RoomRepositoryTest extends IntegrationTestBase {
     @Test
     void shouldFindActiveRoomById() {
         // given
-        Room activeRoom = Room.builder().name("Conference A").isActive(true).build();
+        Room activeRoom =
+                Room.builder().name("Conference A").capacity(2).isActive(true).build();
 
         activeRoom = roomRepository.save(activeRoom);
 
@@ -54,18 +61,16 @@ public class RoomRepositoryTest extends IntegrationTestBase {
         Optional<Room> foundRoom = roomRepository.findByIdAndIsActiveTrue(activeRoom.getId());
 
         // then
-        assertThat(foundRoom)
-                .isPresent()
-                .get()
-                .satisfies(room -> {
-                    assertThat(room.getName()).isEqualTo("Conference A");
-                    assertThat(room.isActive()).isTrue();
-                });
+        assertThat(foundRoom).isPresent().get().satisfies(room -> {
+            assertThat(room.getName()).isEqualTo("Conference A");
+            assertThat(room.isActive()).isTrue();
+        });
     }
 
     @Test
-    void existsByNameAndActiveTrue(){
-        Room activeRoom = Room.builder().name("Conference A").isActive(true).build();
+    void existsByNameAndActiveTrue() {
+        Room activeRoom =
+                Room.builder().name("Conference A").capacity(2).isActive(true).build();
 
         roomRepository.save(activeRoom);
 
@@ -79,10 +84,17 @@ public class RoomRepositoryTest extends IntegrationTestBase {
     @Test
     void shouldFindActiveRoomsByCapacity() {
         // given
-        Room room1 = Room.builder().name("Small Room").capacity(5).isActive(true).build();
-        Room room2 = Room.builder().name("Medium Room").capacity(10).isActive(true).build();
-        Room room3 = Room.builder().name("Large Room").capacity(20).isActive(true).build();
-        Room inactiveRoom = Room.builder().name("Inactive Room").capacity(15).isActive(false).build();
+        Room room1 =
+                Room.builder().name("Small Room").capacity(5).isActive(true).build();
+        Room room2 =
+                Room.builder().name("Medium Room").capacity(10).isActive(true).build();
+        Room room3 =
+                Room.builder().name("Large Room").capacity(20).isActive(true).build();
+        Room inactiveRoom = Room.builder()
+                .name("Inactive Room")
+                .capacity(15)
+                .isActive(false)
+                .build();
 
         roomRepository.saveAll(List.of(room1, room2, room3, inactiveRoom));
 
@@ -90,10 +102,7 @@ public class RoomRepositoryTest extends IntegrationTestBase {
         List<Room> result = roomRepository.findActiveRoomsByCapacity(10);
 
         // then
-        assertThat(result)
-                .hasSize(2)
-                .extracting(Room::getName)
-                .containsExactlyInAnyOrder("Medium Room", "Large Room");
+        assertThat(result).hasSize(2).extracting(Room::getName).containsExactlyInAnyOrder("Medium Room", "Large Room");
 
         // дополнительная проверка: все комнаты активные
         assertThat(result).allMatch(Room::isActive);
@@ -102,7 +111,11 @@ public class RoomRepositoryTest extends IntegrationTestBase {
     @Test
     void shouldUpdateRoomStatus() {
         // given: создаём активную комнату
-        Room room = Room.builder().name("Conference Room").capacity(10).isActive(true).build();
+        Room room = Room.builder()
+                .name("Conference Room")
+                .capacity(10)
+                .isActive(true)
+                .build();
         room = roomRepository.save(room);
 
         // when: деактивируем комнату
@@ -119,7 +132,8 @@ public class RoomRepositoryTest extends IntegrationTestBase {
         // given: создаём комнаты
         Room active1 = Room.builder().name("Room A").isActive(true).capacity(5).build();
         Room active2 = Room.builder().name("Room B").isActive(true).capacity(10).build();
-        Room inactive = Room.builder().name("Room C").isActive(false).capacity(8).build();
+        Room inactive =
+                Room.builder().name("Room C").isActive(false).capacity(8).build();
 
         roomRepository.saveAll(List.of(active1, active2, inactive));
 
@@ -133,9 +147,12 @@ public class RoomRepositoryTest extends IntegrationTestBase {
     @Test
     void shouldFindActiveRoomsByNameIgnoringCase() {
         // given
-        Room room1 = Room.builder().name("Conference A").isActive(true).capacity(10).build();
-        Room room2 = Room.builder().name("Meeting Room B").isActive(true).capacity(5).build();
-        Room room3 = Room.builder().name("Inactive Room").isActive(false).capacity(8).build();
+        Room room1 =
+                Room.builder().name("Conference A").isActive(true).capacity(10).build();
+        Room room2 =
+                Room.builder().name("Meeting Room B").isActive(true).capacity(5).build();
+        Room room3 =
+                Room.builder().name("Inactive Room").isActive(false).capacity(8).build();
 
         roomRepository.saveAll(List.of(room1, room2, room3));
 
@@ -143,10 +160,7 @@ public class RoomRepositoryTest extends IntegrationTestBase {
         List<Room> result = roomRepository.searchActiveRoomsByName("conference");
 
         // then
-        assertThat(result)
-                .hasSize(1)
-                .extracting(Room::getName)
-                .containsExactly("Conference A");
+        assertThat(result).hasSize(1).extracting(Room::getName).containsExactly("Conference A");
 
         // проверка, что все комнаты активные
         assertThat(result).allMatch(Room::isActive);

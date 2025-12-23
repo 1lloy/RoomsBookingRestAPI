@@ -1,5 +1,10 @@
 package com.illoy.roombooking.integration.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -14,36 +19,38 @@ import com.illoy.roombooking.dto.response.JwtResponse;
 import com.illoy.roombooking.dto.response.UserResponse;
 import com.illoy.roombooking.exception.ErrorResponse;
 import com.illoy.roombooking.integration.IntegrationTestBase;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@RequiredArgsConstructor
-@AutoConfigureMockMvc
 public class UserControllerTest extends IntegrationTestBase {
 
-    private final MockMvc mockMvc;
-    private final UserRepository userRepository;
-    private final BookingRepository bookingRepository;
-    private final RoomRepository roomRepository;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private Long userId;
     private String jwtToken;
 
@@ -61,29 +68,30 @@ public class UserControllerTest extends IntegrationTestBase {
 
         userId = user.getId();
 
-        Room room = Room.builder()
-                .name("A Room")
-                .capacity(10)
-                .isActive(true)
-                .build();
+        Room room = Room.builder().name("A Room").capacity(10).isActive(true).build();
 
         roomRepository.save(room);
 
-        Booking booking1 = Booking.builder().room(room).user(user)
-                .startTime(LocalDateTime.of(2026, 2,10, 10, 0))
-                .endTime(LocalDateTime.of(2026, 2,10, 11, 0))
+        Booking booking1 = Booking.builder()
+                .room(room)
+                .user(user)
+                .startTime(LocalDateTime.of(2026, 2, 10, 10, 0))
+                .endTime(LocalDateTime.of(2026, 2, 10, 11, 0))
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        Booking booking2 = Booking.builder().room(room).user(user)
-                .startTime(LocalDateTime.of(2026, 2,12, 12, 0))
-                .endTime(LocalDateTime.of(2026, 2,12, 13, 0))
+        Booking booking2 = Booking.builder()
+                .room(room)
+                .user(user)
+                .startTime(LocalDateTime.of(2026, 2, 12, 12, 0))
+                .endTime(LocalDateTime.of(2026, 2, 12, 13, 0))
                 .status(BookingStatus.CANCELLED)
                 .build();
 
         bookingRepository.saveAll(List.of(booking1, booking2));
 
-        LoginRequest loginRequest = LoginRequest.builder().username("john").password("123").build();
+        LoginRequest loginRequest =
+                LoginRequest.builder().username("john").password("123").build();
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -103,7 +111,8 @@ public class UserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        UserResponse userResponse = objectMapper.readValue(result.getResponse().getContentAsString(), UserResponse.class);
+        UserResponse userResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), UserResponse.class);
 
         assertEquals("john", userResponse.getUsername());
         assertEquals("johnHjon@gmail.com", userResponse.getEmail());
@@ -113,8 +122,7 @@ public class UserControllerTest extends IntegrationTestBase {
 
     @Test
     void getCurrentUser_shouldReturnUnauthorized_whenJwtIsMissing() throws Exception {
-        mockMvc.perform(get("/api/users/me")
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/users/me").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -148,8 +156,9 @@ public class UserControllerTest extends IntegrationTestBase {
 
         // then
         assertEquals("john", response.getUsername());
-        assertEquals("john_updated@gmail.com",  response.getEmail());
-        assertThat(passwordEncoder.matches("newPassword123", updatedUser.getPassword())).isTrue();
+        assertEquals("john_updated@gmail.com", response.getEmail());
+        assertThat(passwordEncoder.matches("newPassword123", updatedUser.getPassword()))
+                .isTrue();
     }
 
     @Test
@@ -168,10 +177,8 @@ public class UserControllerTest extends IntegrationTestBase {
     @Test
     void updateCurrentUser_shouldReturnBadRequest_whenValidationFails() throws Exception {
         // given
-        UserEditRequest editRequest = UserEditRequest.builder()
-                .email("joEmail")
-                .password("pass")
-                .build();
+        UserEditRequest editRequest =
+                UserEditRequest.builder().email("joEmail").password("pass").build();
 
         // when
         MvcResult result = mockMvc.perform(put("/api/users/me")
@@ -181,14 +188,19 @@ public class UserControllerTest extends IntegrationTestBase {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        ErrorResponse errorResponse = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+        ErrorResponse errorResponse =
+                objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        //then
-        assertEquals("VALIDATION_FAILED",  errorResponse.getError());
-        assertEquals("Request validation failed",  errorResponse.getMessage());
-        assertEquals(400,  errorResponse.getStatus());
-        assertEquals("Пароль должен иметь длину от 6 до 40 символов",  errorResponse.getCertainErrors().get("password"));
-        assertEquals("Адрес электронный почты не является корректным",  errorResponse.getCertainErrors().get("email"));
+        // then
+        assertEquals("VALIDATION_FAILED", errorResponse.getError());
+        assertEquals("Request validation failed", errorResponse.getMessage());
+        assertEquals(400, errorResponse.getStatus());
+        assertEquals(
+                "Пароль должен иметь длину от 6 до 40 символов",
+                errorResponse.getCertainErrors().get("password"));
+        assertEquals(
+                "Адрес электронный почты не является корректным",
+                errorResponse.getCertainErrors().get("email"));
     }
 
     @Test
@@ -199,18 +211,14 @@ public class UserControllerTest extends IntegrationTestBase {
                         .param("size", "10")
                         .param("status", "CONFIRMED")
                         .param("fromDate", "2026-02-10")
-                        .param("toDate", "2026-02-20")
-                )
+                        .param("toDate", "2026-02-20"))
                 .andExpect(status().isOk())
                 .andReturn();
 
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        List<BookingResponse> bookings = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                new TypeReference<>() {
-                }
-        );
+        List<BookingResponse> bookings =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(bookings).isNotEmpty();
         assertThat(bookings).hasSize(1);
@@ -219,7 +227,9 @@ public class UserControllerTest extends IntegrationTestBase {
                 .allMatch(b -> b.getStatus() == BookingStatus.CONFIRMED);
 
         assertThat(bookings)
-                .allMatch(b -> !b.getStartTime().isBefore(LocalDate.of(2026, 2, 10).atStartOfDay()))
-                .allMatch(b -> !b.getStartTime().isAfter(LocalDate.of(2026, 2, 20).atTime(LocalTime.MAX)));
+                .allMatch(b ->
+                        !b.getStartTime().isBefore(LocalDate.of(2026, 2, 10).atStartOfDay()))
+                .allMatch(
+                        b -> !b.getStartTime().isAfter(LocalDate.of(2026, 2, 20).atTime(LocalTime.MAX)));
     }
 }

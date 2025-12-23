@@ -1,5 +1,7 @@
 package com.illoy.roombooking.exception;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -11,42 +13,27 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         ErrorResponse error = new ErrorResponse(
-                "INVALID_CREDENTIALS",
-                "Invalid username or password",
-                HttpStatus.UNAUTHORIZED.value(),
-                null
-        );
+                "INVALID_CREDENTIALS", "Invalid username or password", HttpStatus.UNAUTHORIZED.value(), null);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<ErrorResponse> handleDisabledUser(DisabledException ex) {
-        ErrorResponse error = new ErrorResponse(
-                "USER_DISABLED",
-                "User account is disabled",
-                HttpStatus.UNAUTHORIZED.value(),
-                null
-        );
+        ErrorResponse error =
+                new ErrorResponse("USER_DISABLED", "User account is disabled", HttpStatus.UNAUTHORIZED.value(), null);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<ErrorResponse> handleLockedUser(LockedException ex) {
-        ErrorResponse error = new ErrorResponse(
-                "USER_LOCKED",
-                "User account is locked",
-                HttpStatus.UNAUTHORIZED.value(),
-                null
-        );
+        ErrorResponse error =
+                new ErrorResponse("USER_LOCKED", "User account is locked", HttpStatus.UNAUTHORIZED.value(), null);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 

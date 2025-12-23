@@ -22,12 +22,13 @@ public class AdminBookingController {
 
     private final BookingService bookingService;
 
-    //получить бронирования по статусу (с пагинацией)
+    // получить бронирования по статусу (с пагинацией)
     @GetMapping
-    public ResponseEntity<?> findAllByStatus(@RequestParam(required = false) BookingStatus status,
-                                             @RequestParam(defaultValue = "0") int page,
-                                             @RequestParam(defaultValue = "20") int size,
-                                             @RequestParam(defaultValue = "startTime") String sortBy){
+    public ResponseEntity<?> findAllByStatus(
+            @RequestParam(required = false) BookingStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "startTime") String sortBy) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
 
@@ -38,7 +39,7 @@ public class AdminBookingController {
         }
     }
 
-    //поиск бронирований пользователя по id
+    // поиск бронирований пользователя по id
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<BookingResponse>> getBookingsByUser(
             @PathVariable Long userId,
@@ -50,10 +51,10 @@ public class AdminBookingController {
         return ResponseEntity.ok(bookings);
     }
 
-    //обновить статус бронирования
+    // обновить статус бронирования
     @PatchMapping("/{bookingId}/status")
-    public ResponseEntity<BookingResponse> updateBookingStatus(@PathVariable("bookingId") Long bookingId,
-                                                               @RequestBody @Valid BookingStatusUpdateRequest request) {
+    public ResponseEntity<BookingResponse> updateBookingStatus(
+            @PathVariable("bookingId") Long bookingId, @RequestBody @Valid BookingStatusUpdateRequest request) {
 
         BookingResponse updatedBooking = bookingService.updateStatus(bookingId, request.getStatus());
         return ResponseEntity.ok(updatedBooking);

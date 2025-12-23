@@ -6,11 +6,15 @@ import com.illoy.roombooking.database.repository.RoomRepository;
 import com.illoy.roombooking.database.repository.UserRepository;
 import com.illoy.roombooking.dto.request.BookingCreateRequest;
 import com.illoy.roombooking.dto.response.BookingResponse;
-import com.illoy.roombooking.dto.response.RoomResponse;
-import com.illoy.roombooking.dto.response.UserResponse;
 import com.illoy.roombooking.exception.*;
 import com.illoy.roombooking.mapper.*;
 import com.illoy.roombooking.security.AuthenticationService;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,13 +23,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,8 +40,10 @@ public class BookingService {
 
     @Transactional
     public BookingResponse create(BookingCreateRequest request) {
-        Room room = roomRepository.findByIdAndIsActiveTrue(request.getRoomId())
-                .orElseThrow(() -> new RoomNotFoundException("Room not found or inactive with id: " + request.getRoomId()));
+        Room room = roomRepository
+                .findByIdAndIsActiveTrue(request.getRoomId())
+                .orElseThrow(
+                        () -> new RoomNotFoundException("Room not found or inactive with id: " + request.getRoomId()));
 
         User currentUser = authenticationService.getCurrentUser();
 
@@ -65,13 +64,14 @@ public class BookingService {
 
     @Transactional
     public BookingResponse cancel(Long bookingId) {
-        Booking booking = bookingRepository.findById(bookingId)
+        Booking booking = bookingRepository
+                .findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException("Booking not found"));
 
         User currentUser = authenticationService.getCurrentUser();
 
-        if (!booking.getUser().getUsername().equals(currentUser.getUsername()) &&
-                !currentUser.getRole().equals(UserRole.ROLE_ADMIN)) {
+        if (!booking.getUser().getUsername().equals(currentUser.getUsername())
+                && !currentUser.getRole().equals(UserRole.ROLE_ADMIN)) {
             throw new AccessDeniedException("You can only cancel your own bookings");
         }
 
@@ -109,8 +109,9 @@ public class BookingService {
     }
 
     @Transactional
-    public BookingResponse updateStatus(Long id, BookingStatus status){
-        Booking booking = bookingRepository.findById(id)
+    public BookingResponse updateStatus(Long id, BookingStatus status) {
+        Booking booking = bookingRepository
+                .findById(id)
                 .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + id));
 
         if (booking.getStatus() == status) {
@@ -120,7 +121,6 @@ public class BookingService {
         booking.setStatus(status);
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
-
 
     // методы поиска
     public List<BookingResponse> findAll() {
@@ -133,50 +133,52 @@ public class BookingService {
 
         User currentUser = authenticationService.getCurrentUser();
 
-        Booking booking = bookingRepository.findById(id).orElseThrow(() -> new BookingNotFoundException("Booking not found"));
+        Booking booking =
+                bookingRepository.findById(id).orElseThrow(() -> new BookingNotFoundException("Booking not found"));
 
-        if (!booking.getUser().getUsername().equals(currentUser.getUsername()) &&
-                !currentUser.getRole().equals(UserRole.ROLE_ADMIN)) {
+        if (!booking.getUser().getUsername().equals(currentUser.getUsername())
+                && !currentUser.getRole().equals(UserRole.ROLE_ADMIN)) {
             throw new AccessDeniedException("You can only check your own bookings");
-        }
-        else{
+        } else {
             return bookingMapper.toResponse(booking);
         }
     }
 
-    public Page<BookingResponse> findUserBookings(Pageable pageable,
-                                                  BookingStatus status,
-                                                  LocalDate fromDate,
-                                                  LocalDate toDate) {
+    public Page<BookingResponse> findUserBookings(
+            Pageable pageable, BookingStatus status, LocalDate fromDate, LocalDate toDate) {
 
         User currentUser = authenticationService.getCurrentUser();
 
         if (status != null) {
-            return bookingRepository.findByUserIdAndStatus(currentUser.getId(), status, pageable)
+            return bookingRepository
+                    .findByUserIdAndStatus(currentUser.getId(), status, pageable)
                     .map(bookingMapper::toResponse);
         }
 
         // Если указаны даты - фильтруем по дате
         if (fromDate != null || toDate != null) {
-            LocalDateTime start = fromDate != null ? fromDate.atStartOfDay() : LocalDateTime.now().minusYears(100);
-            LocalDateTime end = toDate != null ? toDate.atTime(LocalTime.MAX) : LocalDateTime.now().plusYears(100);
+            LocalDateTime start = fromDate != null
+                    ? fromDate.atStartOfDay()
+                    : LocalDateTime.now().minusYears(100);
+            LocalDateTime end = toDate != null
+                    ? toDate.atTime(LocalTime.MAX)
+                    : LocalDateTime.now().plusYears(100);
 
-            return bookingRepository.findByUserIdAndStartTimeBetween(currentUser.getId(), start, end, pageable)
+            return bookingRepository
+                    .findByUserIdAndStartTimeBetween(currentUser.getId(), start, end, pageable)
                     .map(bookingMapper::toResponse);
         }
 
-        return bookingRepository.findByUserIdOrderByStartTimeDesc(currentUser.getId(), pageable)
+        return bookingRepository
+                .findByUserIdOrderByStartTimeDesc(currentUser.getId(), pageable)
                 .map(bookingMapper::toResponse);
     }
 
-
-    public Page<BookingResponse> findByStatus(BookingStatus status, Pageable pageable){
-        return bookingRepository.findByStatus(status, pageable)
-                .map(bookingMapper::toResponse);
+    public Page<BookingResponse> findByStatus(BookingStatus status, Pageable pageable) {
+        return bookingRepository.findByStatus(status, pageable).map(bookingMapper::toResponse);
     }
 
-    public Map<String, Long> findCountByPeriodGroupByStatus(LocalDateTime start,
-                                                            LocalDateTime end){
+    public Map<String, Long> findCountByPeriodGroupByStatus(LocalDateTime start, LocalDateTime end) {
 
         Map<String, Long> resultMap = new HashMap<>();
 
@@ -187,18 +189,19 @@ public class BookingService {
         return resultMap;
     }
 
-    public long countByStartTimeBetween(LocalDateTime start, LocalDateTime end){
+    public long countByStartTimeBetween(LocalDateTime start, LocalDateTime end) {
         return bookingRepository.countByStartTimeBetween(start, end);
     }
 
-    public Map<String, Long> findBookingsCountByDow(LocalDateTime start, LocalDateTime end){
+    public Map<String, Long> findBookingsCountByDow(LocalDateTime start, LocalDateTime end) {
 
         Map<String, Long> dayStats = new LinkedHashMap<>();
         String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
         List<Object[]> results = bookingRepository.findBookingsByDayOfWeek(start, end);
 
-        results.forEach(object -> dayStats.put(days[((Number) object[0]).intValue()] , ((Number) object[1]).longValue()));
+        results.forEach(
+                object -> dayStats.put(days[((Number) object[0]).intValue()], ((Number) object[1]).longValue()));
 
         return dayStats;
     }
@@ -212,20 +215,18 @@ public class BookingService {
                         result -> (String) result[0],
                         result -> (Long) result[1],
                         (existing, replacement) -> existing,
-                        LinkedHashMap::new
-                ));
+                        LinkedHashMap::new));
     }
 
-    public Map<String, Long> findUsersBookingsCount(LocalDateTime start, LocalDateTime end){
+    public Map<String, Long> findUsersBookingsCount(LocalDateTime start, LocalDateTime end) {
         List<Object[]> results = bookingRepository.findUsersBookingsCount(start, end);
 
         return results.stream()
                 .collect(Collectors.toMap(
-                        result -> (String) result[0], //user name
-                        result -> (Long) result[1], //booking count
+                        result -> (String) result[0], // user name
+                        result -> (Long) result[1], // booking count
                         (existing, replacement) -> existing,
-                        LinkedHashMap::new
-                ));
+                        LinkedHashMap::new));
     }
 
     public Page<BookingResponse> findByUserId(Long userId, Pageable pageable) {
@@ -234,7 +235,8 @@ public class BookingService {
             throw new UsernameNotFoundException("User not found with id: " + userId);
         }
 
-        return bookingRepository.findByUserIdOrderByStartTimeDesc(userId, pageable)
+        return bookingRepository
+                .findByUserIdOrderByStartTimeDesc(userId, pageable)
                 .map(bookingMapper::toResponse);
     }
 }
