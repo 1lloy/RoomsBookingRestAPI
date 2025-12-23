@@ -1,0 +1,15 @@
+spring:
+  application:
+    jwt:
+      secret: ${JWT_TEST_SECRET:c42HZ0MMyWIo1aiFOY1ihWGXIa5t8sbaBjU5D/XTay69cAD6QBuzIXhTTCfogHR0wpjYUUtvyP6pTqVDEKbqSg==}
+      expiration-ms: 300000
+  jpa:
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: validate
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+    parameters:
+      liquibase.commit.enabled: true

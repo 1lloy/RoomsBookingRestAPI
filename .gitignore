@@ -20,9 +20,6 @@ target/
 
 # Application configurations
 application.yml
-application-*.yml
-application.properties
-application-*.properties
 
 # Database
 *.db
